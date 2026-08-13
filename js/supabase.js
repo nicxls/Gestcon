@@ -40,11 +40,15 @@ export async function obterPerfilLogado() {
         return null;
     }
 
+    // Salva o papel no sessionStorage para uso imediato na próxima página
+    sessionStorage.setItem('gestcon_papel', perfil.papel);
+
     return perfil;
 }
 
 // Faz o logout do sistema
 export async function fazerLogout() {
+    sessionStorage.removeItem('gestcon_papel');
     await supabase.auth.signOut();
     window.location.href = 'login.html';
 }

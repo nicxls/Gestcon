@@ -529,6 +529,13 @@
   const campoCnpj = document.getElementById('cnpj');
 
   async function inicializar() {
+    // Exibe a aba Usuários imediatamente se o papel já foi salvo na sessão
+    const papelCache = sessionStorage.getItem('gestcon_papel');
+    if (papelCache === 'master') {
+      const linkUsuariosCache = document.querySelector('a.item-menu[href="usuarios.html"]');
+      if (linkUsuariosCache) linkUsuariosCache.style.display = '';
+    }
+
     usuarioLogado = await obterPerfilLogado();
     if (!usuarioLogado || !usuarioLogado.aprovado) {
       window.location.href = 'login.html';
