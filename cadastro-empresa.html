@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Empresas — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde: #00512E;
+    --verde-escuro: #00381F;
+    --verde-mais-escuro: #042415;
+    --bg: #F4F6F8;
+    --texto: #1B2430;
+    --texto-suave: #5B6672;
+    --linha: #DDE3E9;
+    --erro: #B3261E;
+    --erro-bg: #FBECEB;
+    --sucesso: #1E7B45;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    font-family: 'Public Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .faixa-estado{
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, #00512E 0 33.33%, #B7212B 33.33% 66.66%, #E3A63E 66.66% 100%);
+    flex-shrink: 0;
+  }
+
+  .layout{
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  /* Menu lateral */
+  .menu-lateral{
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--verde-mais-escuro);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
+  .menu-lateral .marca{
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .menu-lateral .marca .brasao{
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+  .menu-lateral .marca .orgao{
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 4px;
+  }
+  .menu-lateral .marca .nome-sistema{
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .menu-lateral .marca .subtitulo{
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2px;
+  }
+  .menu-lateral nav{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 10px;
+  }
+  .item-menu{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 7px;
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+  }
+  .item-menu:hover{
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+  }
+  .item-menu.ativo{
+    background: var(--verde);
+    color: #fff;
+  }
+  .item-menu svg{
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    stroke: currentColor;
+  }
+
+    /* Barra superior: usuário logado e sair */
+  .area-conteudo{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  .barra-superior{
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    padding: 12px 36px;
+    background: #fff;
+    border-bottom: 1px solid var(--linha);
+    flex-shrink: 0;
+  }
+  .usuario-logado-topo{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto);
+  }
+  .usuario-logado-topo svg{
+    width: 16px;
+    height: 16px;
+    stroke: var(--texto-suave);
+    flex-shrink: 0;
+  }
+  .botao-sair-topo{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--linha);
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--texto);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .botao-sair-topo svg{ width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
+  .botao-sair-topo:hover{ background: var(--erro-bg, #FBECEB); border-color: var(--erro, #B3261E); color: var(--erro, #B3261E); }
+  @media (max-width: 640px){
+    .barra-superior{ padding: 10px 16px; }
+  }
+
+  /* Conteúdo principal */
+  main{
+    flex: 1;
+    padding: 32px 36px;
+    min-width: 0;
+  }
+  .cabecalho-pagina{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .cabecalho-pagina h1{
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0 0 3px;
+  }
+  .cabecalho-pagina p{
+    font-size: 13.5px;
+    color: var(--texto-suave);
+    margin: 0;
+  }
+  .botao-primario{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--verde);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s ease;
+  }
+  .botao-primario:hover{ background: var(--verde-escuro); }
+
+  .cartao-tabela{
+    background: #fff;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th{
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--linha);
+    background: #FAFBFC;
+  }
+  tbody td{
+    padding: 14px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--linha);
+  }
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody tr:hover{ background: #FAFBFC; }
+  td.nome{ font-weight: 600; }
+  td.cnpj{ color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+  .acoes-linha{
+    display: flex;
+    gap: 8px;
+  }
+  .botao-icone{
+    border: 1px solid var(--linha);
+    background: #fff;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 12px;
+    color: var(--texto-suave);
+    cursor: pointer;
+  }
+  .botao-icone:hover{ border-color: var(--verde); color: var(--verde); }
+  .estado-vazio{
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--texto-suave);
+    font-size: 14px;
+  }
+
+  /* Modal de cadastro */
+  .sobreposicao{
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,25,35,0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .sobreposicao.aberta{ display: flex; }
+  .modal-cartao{
+    width: 100%;
+    max-width: 440px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 28px 24px;
+  }
+  .modal-cartao h2{
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .modal-cartao p.instrucao{
+    font-size: 13px;
+    color: var(--texto-suave);
+    margin: 0 0 20px;
+  }
+  .campo{ margin-bottom: 16px; }
+  .campo label{
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .campo input{
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--linha);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--texto);
+    background: #FBFCFD;
+  }
+  .campo input:focus{
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(0,81,46,0.14);
+    background: #fff;
+  }
+  .campo input.invalido{
+    border-color: var(--erro);
+    background: var(--erro-bg);
+  }
+  .mensagem-erro{
+    display: none;
+    font-size: 12px;
+    color: var(--erro);
+    margin-top: 5px;
+  }
+  .mensagem-erro.visivel{ display: block; }
+  .acoes-modal{
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .botao{
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+  }
+  .botao-salvar{ background: var(--verde); color: #fff; }
+  .botao-salvar:hover{ background: var(--verde-escuro); }
+  .botao-cancelar{ background: #fff; color: var(--texto); border: 1px solid var(--linha); }
+  .botao-cancelar:hover{ border-color: var(--texto-suave); }
+
+  .lista-visualizacao{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .item-visualizacao.largura-total{ grid-column: 1 / -1; }
+  .item-visualizacao .rotulo-visualizacao{
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .item-visualizacao .valor-visualizacao{
+    display: block;
+    font-size: 14px;
+    color: var(--texto);
+    font-weight: 500;
+  }
+
+  @media (max-width: 720px){
+    .menu-lateral{ width: 64px; }
+    .menu-lateral .marca .nome-sistema, .menu-lateral .marca .subtitulo, .menu-lateral .marca .orgao, .item-menu span{ display: none; }
+    .item-menu{ justify-content: center; }
+    main{ padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="faixa-estado"></div>
+
+  <div class="layout">
+  <aside class="menu-lateral">
+    <div class="marca">
+      <svg class="brasao" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Brasão do Estado do Rio Grande do Sul (placeholder)">
+        <circle cx="50" cy="50" r="47" fill="#FFFFFF" stroke="#00512E" stroke-width="3"/>
+        <path d="M50 3 A47 47 0 0 1 50 97 Z" fill="#B7212B" opacity="0.9"/>
+        <path d="M50 3 A47 47 0 0 0 50 97 Z" fill="#00512E" opacity="0.9"/>
+        <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
+        <text x="50" y="58" text-anchor="middle" font-family="Public Sans, sans-serif" font-weight="800" font-size="26" fill="#00512E">RS</text>
+        <circle cx="50" cy="50" r="47" fill="none" stroke="#E3A63E" stroke-width="2"/>
+      </svg>
+      <div class="nome-sistema">GestCon</div>
+      <div class="subtitulo">Sistema de Gestão</div>
+    </div>
+    <nav>
+      <a class="item-menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>
+        <span>Início</span>
+      </a>
+      <a class="item-menu ativo" href="cadastro-empresa.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg>
+        <span>Empresas</span>
+      </a>
+      <a class="item-menu" href="contratos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h6"/><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+        <span>Contratos</span>
+      </a>
+
+      <a class="item-menu" href="postos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
+        <span>Postos</span>
+      </a>
+      <a class="item-menu" href="usuarios.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Usuários</span>
+      </a>
+      <a class="item-menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.04z"/></svg>
+        <span>Configurações</span>
+      </a>
+    </nav>
+  </aside>
+
+  <div class="area-conteudo">
+  <header class="barra-superior">
+    <div class="usuario-logado-topo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="matricula-usuario-topo">Matrícula: —</span>
+    </div>
+    <button type="button" class="botao-sair-topo" onclick="deslogar()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Sair
+    </button>
+  </header>
+
+  <main>
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Empresas</h1>
+        <p>Empresas cadastradas para vínculo com roteiros contratuais.</p>
+      </div>
+      <button class="botao-primario" id="botao-cadastrar-empresa" onclick="abrirModal()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Cadastrar nova empresa
+      </button>
+    </div>
+
+    <div class="cartao-tabela">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CNPJ</th>
+            <th style="width:140px">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="corpo-tabela"></tbody>
+      </table>
+      <div class="estado-vazio" id="estado-vazio" style="display:none">Nenhuma empresa cadastrada ainda.</div>
+    </div>
+  </main>
+  </div>
+  </div>
+
+  <div class="sobreposicao" id="sobreposicao">
+    <div class="modal-cartao">
+      <h2 id="titulo-modal">Cadastrar empresa</h2>
+      <p class="instrucao">Informe o nome e o CNPJ da empresa.</p>
+
+      <form id="form-empresa" novalidate>
+        <div class="campo">
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" placeholder="Nome da empresa" maxlength="200">
+          <div class="mensagem-erro" id="erro-nome">Informe o nome da empresa.</div>
+        </div>
+
+        <div class="campo">
+          <label for="cnpj">CNPJ</label>
+          <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18">
+          <div class="mensagem-erro" id="erro-cnpj">CNPJ inválido.</div>
+        </div>
+
+        <div class="acoes-modal">
+          <button type="button" class="botao botao-cancelar" onclick="fecharModal()">Cancelar</button>
+          <button type="submit" class="botao botao-salvar" id="botao-salvar">Salvar empresa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="sobreposicao" id="sobreposicao-visualizar">
+    <div class="modal-cartao">
+      <h2>Detalhes da Empresa</h2>
+      <p class="instrucao">Informações cadastradas, apenas para consulta.</p>
+
+      <div class="lista-visualizacao">
+        <div class="item-visualizacao largura-total">
+          <span class="rotulo-visualizacao">Nome</span>
+          <span class="valor-visualizacao" id="visualizar-nome"></span>
+        </div>
+        <div class="item-visualizacao largura-total">
+          <span class="rotulo-visualizacao">CNPJ</span>
+          <span class="valor-visualizacao" id="visualizar-cnpj"></span>
+        </div>
+      </div>
+
+      <div class="acoes-modal">
+        <button type="button" class="botao botao-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  import { supabase, obterPerfilLogado, fazerLogout } from './js/supabase.js';
+
+  window.deslogar = fazerLogout;
+
+  let usuarioLogado = null;
+  let usuarioEhAdministrador = false;
+  let usuarioEhMaster = false;
+
+  let empresas = [];
+  let idEmEdicao = null;
+
+  const corpoTabela = document.getElementById('corpo-tabela');
+  const estadoVazio = document.getElementById('estado-vazio');
+  const sobreposicao = document.getElementById('sobreposicao');
+  const sobreposicaoVisualizar = document.getElementById('sobreposicao-visualizar');
+  const form = document.getElementById('form-empresa');
+  const campoNome = document.getElementById('nome');
+  const campoCnpj = document.getElementById('cnpj');
+
+  async function inicializar() {
+    usuarioLogado = await obterPerfilLogado();
+    if (!usuarioLogado || !usuarioLogado.aprovado) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    usuarioEhAdministrador = usuarioLogado.papel === 'administrador' || usuarioLogado.papel === 'master';
+    usuarioEhMaster = usuarioLogado.papel === 'master';
+
+    const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
+    if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
+
+    if (!usuarioEhMaster) {
+      const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+      if (linkUsuarios) linkUsuarios.remove();
+    }
+    if (!usuarioEhAdministrador) {
+      const botaoCadastrarEmpresa = document.getElementById('botao-cadastrar-empresa');
+      if (botaoCadastrarEmpresa) botaoCadastrarEmpresa.style.display = 'none';
+    }
+
+    await carregarEmpresas();
+  }
+
+  async function carregarEmpresas() {
+    const { data, error } = await supabase.from('empresas').select('*').order('nome', { ascending: true });
+    if (error) {
+      console.error("Erro ao carregar empresas:", error);
+      return;
+    }
+    empresas = data;
+    renderizarTabela();
+  }
+
+  function formatarCnpj(digitos) {
+    return digitos.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  }
+
+  function renderizarTabela() {
+    corpoTabela.innerHTML = '';
+    estadoVazio.style.display = empresas.length ? 'none' : 'block';
+    empresas.forEach((empresa) => {
+      const linha = document.createElement('tr');
+      linha.innerHTML = `
+        <td class="nome">${empresa.nome}</td>
+        <td class="cnpj">${formatarCnpj(empresa.cnpj)}</td>
+        <td>
+          <div class="acoes-linha">
+            <button class="botao-icone" onclick="visualizarEmpresa('${empresa.id}')">Visualizar</button>
+            ${usuarioEhAdministrador ? `<button class="botao-icone" onclick="editarEmpresa('${empresa.id}')">Editar</button>
+            <button class="botao-icone" onclick="excluirEmpresa('${empresa.id}')">Excluir</button>` : ''}
+          </div>
+        </td>`;
+      corpoTabela.appendChild(linha);
+    });
+  }
+
+  window.editarEmpresa = function(id) {
+    if (!usuarioEhAdministrador) return;
+    idEmEdicao = id;
+    const empresa = empresas.find(e => e.id === id);
+    limparErros();
+    document.getElementById('titulo-modal').textContent = 'Editar empresa';
+    document.getElementById('botao-salvar').textContent = 'Salvar alterações';
+    campoNome.value = empresa.nome;
+    campoCnpj.value = formatarCnpj(empresa.cnpj);
+    sobreposicao.classList.add('aberta');
+    campoNome.focus();
+  }
+
+  window.excluirEmpresa = async function(id) {
+    if (!usuarioEhAdministrador) return;
+    if (!confirm('Tem certeza que deseja excluir esta empresa? Todos os contratos vinculados também podem ser afetados.')) return;
+
+    const { error } = await supabase.from('empresas').delete().eq('id', id);
+    if (error) {
+      alert("Erro ao excluir: " + error.message);
+    } else {
+      await carregarEmpresas();
+    }
+  }
+
+  window.visualizarEmpresa = function(id) {
+    const empresa = empresas.find(e => e.id === id);
+    document.getElementById('visualizar-nome').textContent = empresa.nome;
+    document.getElementById('visualizar-cnpj').textContent = formatarCnpj(empresa.cnpj);
+    sobreposicaoVisualizar.classList.add('aberta');
+  }
+
+  window.fecharModalVisualizar = function() {
+    sobreposicaoVisualizar.classList.remove('aberta');
+  }
+
+  window.abrirModal = function() {
+    if (!usuarioEhAdministrador) return;
+    idEmEdicao = null;
+    form.reset();
+    limparErros();
+    document.getElementById('titulo-modal').textContent = 'Cadastrar empresa';
+    document.getElementById('botao-salvar').textContent = 'Salvar empresa';
+    sobreposicao.classList.add('aberta');
+    campoNome.focus();
+  }
+
+  window.fecharModal = function() {
+    sobreposicao.classList.remove('aberta');
+  }
+
+  function limparErros() {
+    campoNome.classList.remove('invalido');
+    campoCnpj.classList.remove('invalido');
+    document.getElementById('erro-nome').classList.remove('visivel');
+    document.getElementById('erro-cnpj').classList.remove('visivel');
+  }
+
+  campoCnpj.addEventListener('input', () => {
+    let v = campoCnpj.value.replace(/\D/g, '').slice(0, 14);
+    v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+    v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+    v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+    v = v.replace(/(\d{4})(\d)/, '$1-$2');
+    campoCnpj.value = v;
+  });
+
+  function cnpjValido(cnpjFormatado) {
+    const cnpj = cnpjFormatado.replace(/\D/g, '');
+    if (cnpj.length !== 14) return false;
+    if (/^(\d)\1{13}$/.test(cnpj)) return false;
+
+    const calcularDigito = (base, pesos) => {
+      const soma = pesos.reduce((acc, peso, i) => acc + peso * parseInt(base[i]), 0);
+      const resto = soma % 11;
+      return resto < 2 ? 0 : 11 - resto;
+    };
+
+    const pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+    if (calcularDigito(cnpj, pesos1) !== parseInt(cnpj[12])) return false;
+    if (calcularDigito(cnpj, pesos2) !== parseInt(cnpj[13])) return false;
+    return true;
+  }
+
+  form.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    limparErros();
+    let valido = true;
+
+    if (!campoNome.value.trim()) {
+      campoNome.classList.add('invalido');
+      document.getElementById('erro-nome').classList.add('visivel');
+      valido = false;
+    }
+
+    if (!cnpjValido(campoCnpj.value)) {
+      campoCnpj.classList.add('invalido');
+      document.getElementById('erro-cnpj').classList.add('visivel');
+      valido = false;
+    }
+
+    if (!valido) return;
+
+    const botaoSalvar = document.getElementById('botao-salvar');
+    const textoOriginal = botaoSalvar.textContent;
+    botaoSalvar.textContent = 'Salvando...';
+    botaoSalvar.disabled = true;
+
+    const dados = { nome: campoNome.value.trim(), cnpj: campoCnpj.value.replace(/\D/g, '') };
+    
+    let error = null;
+    if (idEmEdicao !== null) {
+      const res = await supabase.from('empresas').update(dados).eq('id', idEmEdicao);
+      error = res.error;
+    } else {
+      const res = await supabase.from('empresas').insert([dados]);
+      error = res.error;
+    }
+
+    if (error) {
+      if (error.code === '23505') { // unique violation code
+        alert("Já existe uma empresa cadastrada com este CNPJ.");
+      } else {
+        alert("Erro ao salvar empresa: " + error.message);
+      }
+    } else {
+      await carregarEmpresas();
+      fecharModal();
+    }
+
+    botaoSalvar.textContent = textoOriginal;
+    botaoSalvar.disabled = false;
+  });
+
+  inicializar();
+</script>
+
+</body>
+</html>

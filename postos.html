@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Postos — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --verde: #00512E;
+    --verde-escuro: #00381F;
+    --verde-mais-escuro: #042415;
+    --bg: #F4F6F8;
+    --texto: #1B2430;
+    --texto-suave: #5B6672;
+    --linha: #DDE3E9;
+    --erro: #B3261E;
+    --erro-bg: #FBECEB;
+    --sucesso: #1E7B45;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    font-family: 'Public Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .faixa-estado{
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, #00512E 0 33.33%, #B7212B 33.33% 66.66%, #E3A63E 66.66% 100%);
+    flex-shrink: 0;
+  }
+
+  .layout{
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  /* Menu lateral */
+  .menu-lateral{
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--verde-mais-escuro);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
+  .menu-lateral .marca{
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .menu-lateral .marca .brasao{
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+  .menu-lateral .marca .orgao{
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 4px;
+  }
+  .menu-lateral .marca .nome-sistema{
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .menu-lateral .marca .subtitulo{
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2px;
+  }
+  .menu-lateral nav{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 10px;
+  }
+  .item-menu{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 7px;
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+  }
+  .item-menu:hover{
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+  }
+  .item-menu.ativo{
+    background: var(--verde);
+    color: #fff;
+  }
+  .item-menu svg{
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    stroke: currentColor;
+  }
+
+    /* Barra superior: usuário logado e sair */
+  .area-conteudo{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  .barra-superior{
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    padding: 12px 36px;
+    background: #fff;
+    border-bottom: 1px solid var(--linha);
+    flex-shrink: 0;
+  }
+  .usuario-logado-topo{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto);
+  }
+  .usuario-logado-topo svg{
+    width: 16px;
+    height: 16px;
+    stroke: var(--texto-suave);
+    flex-shrink: 0;
+  }
+  .botao-sair-topo{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--linha);
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--texto);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .botao-sair-topo svg{ width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
+  .botao-sair-topo:hover{ background: var(--erro-bg, #FBECEB); border-color: var(--erro, #B3261E); color: var(--erro, #B3261E); }
+  @media (max-width: 640px){
+    .barra-superior{ padding: 10px 16px; }
+  }
+
+  /* Conteúdo principal */
+  main{
+    flex: 1;
+    padding: 32px 36px;
+    min-width: 0;
+  }
+  .cabecalho-pagina{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .cabecalho-pagina h1{
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0 0 3px;
+    color: var(--texto);
+  }
+  .cabecalho-pagina p{
+    font-size: 13.5px;
+    color: var(--texto-suave);
+    margin: 0;
+  }
+  .botao-primario{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--verde);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s ease;
+  }
+  .botao-primario:hover{ background: var(--verde-escuro); }
+  .botao-secundario{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #fff;
+    color: var(--texto);
+    border: 1px solid var(--linha);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .botao-secundario:hover{ background: #FAFBFC; border-color: #C9D2CB; }
+  .botao-secundario svg{ flex-shrink: 0; }
+  .grupo-acoes-topo{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .cartao-tabela{
+    background: #fff;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .tabela-scroll{
+    overflow-x: auto;
+  }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 880px;
+  }
+  thead th{
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--linha);
+    background: #FAFBFC;
+    white-space: nowrap;
+  }
+  tbody td{
+    padding: 14px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--linha);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody tr:hover{ background: #FAFBFC; }
+  td.numero{ font-weight: 600; }
+  td.suave{ color: var(--texto-suave); }
+  .selo-tipo{
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .selo-tipo.licitacao{ background: #E8F1EC; color: var(--verde); }
+  .selo-tipo.dispensa{ background: #FBECEB; color: var(--erro); }
+  .selo-situacao{
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .selo-situacao.ativo{ background: #E8F1EC; color: var(--verde); }
+  .selo-situacao.encerrado{ background: #EEF0F2; color: var(--texto-suave); }
+  .selo-situacao.rescindido{ background: #FBECEB; color: var(--erro); }
+
+  /* Filtros */
+  .cartao-filtros{
+    background: #fff;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    align-items: end;
+  }
+  .campo-filtro label{
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+  }
+  .campo-filtro select, .campo-filtro input{
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--linha);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: var(--texto);
+    background: #FBFCFD;
+  }
+  .campo-filtro select:focus, .campo-filtro input:focus{
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(0,81,46,0.14);
+    background: #fff;
+  }
+  .botao-limpar-filtros{
+    grid-column: 1 / -1;
+    justify-self: start;
+    background: none;
+    border: none;
+    color: var(--verde);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .botao-limpar-filtros:hover{ text-decoration: underline; }
+  @media (max-width: 1000px){
+    .cartao-filtros{ grid-template-columns: repeat(2, 1fr); }
+  }
+  .acoes-linha{
+    display: flex;
+    gap: 8px;
+  }
+  .botao-icone{
+    border: 1px solid var(--linha);
+    background: #fff;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 12px;
+    color: var(--texto-suave);
+    cursor: pointer;
+  }
+  .botao-icone:hover{ border-color: var(--verde); color: var(--verde); }
+  .estado-vazio{
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--texto-suave);
+    font-size: 14px;
+  }
+
+  /* Modal de cadastro */
+  .sobreposicao{
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,25,35,0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+    overflow-y: auto;
+  }
+  .sobreposicao.aberta{ display: flex; }
+  .modal-cartao{
+    width: 100%;
+    max-width: 640px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 30px 26px;
+    margin: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-cartao h2{
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .modal-cartao p.instrucao{
+    font-size: 13px;
+    color: var(--texto-suave);
+    margin: 0 0 20px;
+  }
+  .grade-formulario{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 16px;
+  }
+  .campo{ margin-bottom: 16px; }
+  .campo.largura-total{ grid-column: 1 / -1; }
+  .campo label{
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .campo input, .campo select, .campo textarea{
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--linha);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--texto);
+    background: #FBFCFD;
+  }
+  .campo textarea{
+    resize: vertical;
+    min-height: 70px;
+  }
+  .campo input:focus, .campo select:focus, .campo textarea:focus{
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(0,81,46,0.14);
+    background: #fff;
+  }
+  .campo input.invalido, .campo select.invalido, .campo textarea.invalido{
+    border-color: var(--erro);
+    background: var(--erro-bg);
+  }
+  .mensagem-erro{
+    display: none;
+    font-size: 12px;
+    color: var(--erro);
+    margin-top: 5px;
+  }
+  .mensagem-erro.visivel{ display: block; }
+  .campo-motivo{ display: none; }
+  .campo-motivo.visivel-condicional{ display: block; }
+  .acoes-modal{
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .botao{
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+  }
+  .botao-salvar{ background: var(--verde); color: #fff; }
+  .botao-salvar:hover{ background: var(--verde-escuro); }
+  .botao-cancelar{ background: #fff; color: var(--texto); border: 1px solid var(--linha); }
+  .botao-cancelar:hover{ border-color: var(--texto-suave); }
+
+  .lista-visualizacao{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .item-visualizacao.largura-total{ grid-column: 1 / -1; }
+  .item-visualizacao .rotulo-visualizacao{
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .item-visualizacao .valor-visualizacao{
+    display: block;
+    font-size: 14px;
+    color: var(--texto);
+    font-weight: 500;
+  }
+  .modal-visualizar{ max-width: 640px; }
+
+  @media (max-width: 720px){
+    .menu-lateral{ width: 64px; }
+    .menu-lateral .marca .nome-sistema, .menu-lateral .marca .subtitulo, .menu-lateral .marca .orgao, .item-menu span{ display: none; }
+    .item-menu{ justify-content: center; }
+    main{ padding: 24px 16px; }
+  }
+  @media (max-width: 560px){
+    .grade-formulario{ grid-template-columns: 1fr; }
+  }
+
+  /* Ações da tela de Postos */
+  .botao-gerenciar-postos{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--linha);
+    background: #fff;
+    border-radius: 6px;
+    padding: 6px 11px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--verde);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .botao-gerenciar-postos:hover{ background: #E8F1EC; border-color: var(--verde); }
+  .botao-gerenciar-postos svg{ width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
+
+  .contagem-postos{ color:#1B2430 !important; font-weight:600; }
+  .contagem-postos span:first-child{ color:#1B2430 !important; }
+  .contagem-postos .suave{ color:#5B6672 !important; font-weight:500; }
+  tbody td{ color:#1B2430; }
+  tbody td *{ color:inherit; }
+  .contagem-postos .suave{ color:#5B6672 !important; }
+
+  /* Dashboard de indicadores de postos */
+  .dashboard-postos{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .cartao-indicador{
+    background: #fff;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .cartao-indicador .icone-indicador{
+    width: 42px;
+    height: 42px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .cartao-indicador .icone-indicador svg{ width: 20px; height: 20px; }
+  .cartao-indicador.total .icone-indicador{ background: #E8F1EC; color: var(--verde); }
+  .cartao-indicador.implantados .icone-indicador{ background: #E8F1EC; color: var(--sucesso); }
+  .cartao-indicador.vagos .icone-indicador{ background: #FBECEB; color: var(--erro); }
+  .cartao-indicador .texto-indicador{ min-width: 0; }
+  .cartao-indicador .numero-indicador{
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--texto);
+    line-height: 1.15;
+  }
+  .cartao-indicador .rotulo-indicador{
+    font-size: 12.5px;
+    color: var(--texto-suave);
+    font-weight: 600;
+  }
+  @media (max-width: 720px){
+    .dashboard-postos{ grid-template-columns: 1fr; }
+  }
+
+  /* Modal de gerenciamento de postos */
+  .modal-postos{ max-width: 620px; }
+  .lista-postos{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 46vh;
+    overflow-y: auto;
+    padding-right: 2px;
+    margin-bottom: 14px;
+  }
+  .posto-item{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--linha);
+    border-radius: 8px;
+    background: #FBFCFD;
+  }
+  .posto-item .posto-cabecalho{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .posto-item .numero-posto{
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--texto-suave);
+  }
+  .posto-item .campos-posto{
+    display: grid;
+    grid-template-columns: 1fr 1fr 130px 120px;
+    gap: 8px;
+  }
+  .posto-item .subcampo label{
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .posto-item input, .posto-item select{
+    width: 100%;
+    padding: 8px 9px;
+    border: 1px solid var(--linha);
+    border-radius: 7px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--texto);
+    background: #fff;
+  }
+  .posto-item input:focus, .posto-item select:focus{
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(0,81,46,0.14);
+  }
+  .posto-item select.status-ocupado{ color: var(--sucesso); font-weight: 600; }
+  .posto-item select.status-vago{ color: var(--erro); font-weight: 600; }
+  @media (max-width: 560px){
+    .posto-item .campos-posto{ grid-template-columns: 1fr 1fr; }
+  }
+  .botao-adicionar-posto{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px dashed var(--linha);
+    color: var(--verde);
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+  }
+  .botao-adicionar-posto:hover{ background: #E8F1EC; border-color: var(--verde); }
+  .resumo-postos{
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--linha);
+    font-size: 13px;
+    color: var(--texto-suave);
+  }
+
+  /* Abas de navegação da página de Postos */
+  .abas-pagina{
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--linha);
+    margin-bottom: 20px;
+  }
+  .aba-item{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 4px;
+    margin-bottom: -1px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    cursor: pointer;
+  }
+  .aba-item + .aba-item{ margin-left: 22px; }
+  .aba-item svg{ width: 15px; height: 15px; stroke: currentColor; flex-shrink: 0; }
+  .aba-item:hover{ color: var(--texto); }
+  .aba-item.ativa{ color: var(--verde); border-bottom-color: var(--verde); }
+  .vista-pagina{ display: none; }
+  .vista-pagina.ativa{ display: block; }
+</style>
+</head>
+<body>
+
+  <div class="faixa-estado"></div>
+
+  <div class="layout">
+  <aside class="menu-lateral">
+    <div class="marca">
+      <svg class="brasao" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Brasão do Estado do Rio Grande do Sul (placeholder)">
+        <circle cx="50" cy="50" r="47" fill="#FFFFFF" stroke="#00512E" stroke-width="3"/>
+        <path d="M50 3 A47 47 0 0 1 50 97 Z" fill="#B7212B" opacity="0.9"/>
+        <path d="M50 3 A47 47 0 0 0 50 97 Z" fill="#00512E" opacity="0.9"/>
+        <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
+        <text x="50" y="58" text-anchor="middle" font-family="Public Sans, sans-serif" font-weight="800" font-size="26" fill="#00512E">RS</text>
+        <circle cx="50" cy="50" r="47" fill="none" stroke="#E3A63E" stroke-width="2"/>
+      </svg>
+      <div class="nome-sistema">GestCon</div>
+      <div class="subtitulo">Sistema de Gestão</div>
+    </div>
+    <nav>
+      <a class="item-menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>
+        <span>Início</span>
+      </a>
+      <a class="item-menu" href="cadastro-empresa.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg>
+        <span>Empresas</span>
+      </a>
+      <a class="item-menu" href="contratos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h6"/><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+        <span>Contratos</span>
+      </a>
+      <a class="item-menu ativo" href="postos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
+        <span>Postos</span>
+      </a>
+      <a class="item-menu" href="usuarios.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Usuários</span>
+      </a>
+      <a class="item-menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.04z"/></svg>
+        <span>Configurações</span>
+      </a>
+    </nav>
+  </aside>
+
+  <div class="area-conteudo">
+  <header class="barra-superior">
+    <div class="usuario-logado-topo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="matricula-usuario-topo">Matrícula: —</span>
+    </div>
+    <button type="button" class="botao-sair-topo" onclick="deslogar()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Sair
+    </button>
+  </header>
+
+  <main>
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Postos</h1>
+        <p>Todos os contratos cadastrados. Gerencie os postos de cada contrato individualmente.</p>
+      </div>
+    </div>
+
+    <div class="abas-pagina">
+      <button type="button" class="aba-item ativa" id="aba-contratos" onclick="mostrarVista('contratos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h6"/><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+        Contratos
+      </button>
+      <button type="button" class="aba-item" id="aba-relatorio-postos" onclick="mostrarVista('relatorio-postos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v4M16 3v4M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 13h3M8 16h6"/></svg>
+        Relatório de Postos
+      </button>
+    </div>
+
+    <div class="vista-pagina ativa" id="vista-contratos">
+
+    <div class="dashboard-postos" id="dashboard-postos">
+      <div class="cartao-indicador total">
+        <div class="icone-indicador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
+        </div>
+        <div class="texto-indicador">
+          <div class="numero-indicador" id="indicador-total">0</div>
+          <div class="rotulo-indicador">Quantidade de Postos</div>
+        </div>
+      </div>
+      <div class="cartao-indicador implantados">
+        <div class="icone-indicador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <div class="texto-indicador">
+          <div class="numero-indicador" id="indicador-implantados">0</div>
+          <div class="rotulo-indicador">Postos Implantados</div>
+        </div>
+      </div>
+      <div class="cartao-indicador vagos">
+        <div class="icone-indicador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        </div>
+        <div class="texto-indicador">
+          <div class="numero-indicador" id="indicador-vagos">0</div>
+          <div class="rotulo-indicador">Postos Vagos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao-filtros">
+      <div class="campo-filtro">
+        <label for="filtro-cre">CRE</label>
+        <input type="text" id="filtro-cre" list="lista-cre" placeholder="Digite ou selecione" autocomplete="off">
+        <datalist id="lista-cre"></datalist>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-lote">Lote</label>
+        <input type="text" id="filtro-lote" list="lista-lote" placeholder="Digite ou selecione" autocomplete="off">
+        <datalist id="lista-lote"></datalist>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-empresa">Empresa</label>
+        <input type="text" id="filtro-empresa" list="lista-empresa" placeholder="Digite ou selecione" autocomplete="off">
+        <datalist id="lista-empresa"></datalist>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-servico">Serviço</label>
+        <select id="filtro-servico">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-tipo">Tipo de Contrato</label>
+        <select id="filtro-tipo">
+          <option value="">Todos</option>
+          <option value="dispensa">Dispensa de Licitação</option>
+          <option value="licitacao">Licitação</option>
+        </select>
+      </div>
+      <button type="button" class="botao-limpar-filtros" id="botao-limpar-filtros">Limpar filtros</button>
+    </div>
+
+    <div class="cartao-tabela">
+      <div class="tabela-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Número do Contrato</th>
+              <th>Tipo</th>
+              <th>Situação</th>
+              <th>Empresa</th>
+              <th>Serviço</th>
+              <th>CRE</th>
+              <th>Lote</th>
+              <th>Qtd. de Postos</th>
+              <th>Postos Preenchidos</th>
+              <th style="width:280px">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="corpo-tabela"></tbody>
+        </table>
+      </div>
+      <div class="estado-vazio" id="estado-vazio" style="display:none">Nenhum contrato cadastrado ainda.</div>
+    </div>
+
+    </div>
+
+    <div class="vista-pagina" id="vista-relatorio-postos">
+
+      <div class="cabecalho-pagina">
+        <div>
+          <h1 style="font-size:15.5px; margin-bottom:2px;">Relatório de Postos</h1>
+          <p>Lista consolidada de todos os postos cadastrados nos contratos.</p>
+        </div>
+        <div class="grupo-acoes-topo">
+          <button class="botao-secundario" onclick="exportarExcelPostos()" title="Exportar postos para Excel">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 6 6M15 15l-6 6"/></svg>
+            Exportar Excel
+          </button>
+          <button class="botao-secundario" onclick="exportarPDFPostos()" title="Exportar postos para PDF">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h1a1.5 1.5 0 0 0 0-3H9v5"/><path d="M13 12v5h1a2 2 0 0 0 0-5z" fill="none"/></svg>
+            Exportar PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="cartao-filtros">
+        <div class="campo-filtro">
+          <label for="filtro-relatorio-cre">CRE</label>
+          <input type="text" id="filtro-relatorio-cre" list="lista-relatorio-cre" placeholder="Digite ou selecione" autocomplete="off">
+          <datalist id="lista-relatorio-cre"></datalist>
+        </div>
+        <div class="campo-filtro">
+          <label for="filtro-relatorio-lote">Lote</label>
+          <input type="text" id="filtro-relatorio-lote" list="lista-relatorio-lote" placeholder="Digite ou selecione" autocomplete="off">
+          <datalist id="lista-relatorio-lote"></datalist>
+        </div>
+        <div class="campo-filtro">
+          <label for="filtro-relatorio-municipio">Município</label>
+          <input type="text" id="filtro-relatorio-municipio" list="lista-relatorio-municipio" placeholder="Digite ou selecione" autocomplete="off">
+          <datalist id="lista-relatorio-municipio"></datalist>
+        </div>
+        <div class="campo-filtro">
+          <label for="filtro-relatorio-servico">Serviço</label>
+          <select id="filtro-relatorio-servico">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="campo-filtro">
+          <label for="filtro-relatorio-status">Status</label>
+          <select id="filtro-relatorio-status">
+            <option value="">Todos</option>
+            <option value="ocupado">Ocupado</option>
+            <option value="vago">Vago</option>
+          </select>
+        </div>
+        <button type="button" class="botao-limpar-filtros" id="botao-limpar-filtros-relatorio">Limpar filtros</button>
+      </div>
+
+      <div class="cartao-tabela">
+        <div class="tabela-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Município</th>
+                <th>Local</th>
+                <th>Carga Horária</th>
+                <th>Serviço</th>
+                <th>CRE</th>
+                <th>Lote</th>
+                <th>Nº Contrato</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-tabela-relatorio-postos"></tbody>
+          </table>
+        </div>
+        <div class="estado-vazio" id="estado-vazio-relatorio-postos" style="display:none">Nenhum posto cadastrado ainda.</div>
+      </div>
+
+    </div>
+  </main>
+  </div>
+  </div>
+
+  <div class="sobreposicao" id="sobreposicao-postos">
+    <div class="modal-cartao modal-postos">
+      <h2 id="titulo-modal-postos">Gerenciar Postos</h2>
+      <p class="instrucao" id="instrucao-modal-postos">Contrato — Empresa</p>
+
+      <div class="lista-postos" id="lista-postos"></div>
+
+      <div class="resumo-postos" id="resumo-postos"></div>
+
+      <div class="acoes-modal">
+        <button type="button" class="botao botao-cancelar" onclick="fecharModalPostos()">Fechar</button>
+        <button type="button" class="botao botao-salvar" id="botao-salvar-postos">Salvar Postos</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sobreposicao" id="sobreposicao-visualizar">
+    <div class="modal-cartao modal-visualizar">
+      <h2>Detalhes do Contrato</h2>
+      <p class="instrucao">Informações cadastradas, apenas para consulta.</p>
+
+      <div class="lista-visualizacao">
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">Número do Contrato</span>
+          <span class="valor-visualizacao" id="visualizar-numero-contrato"></span>
+        </div>
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">Tipo de Contrato</span>
+          <span class="valor-visualizacao" id="visualizar-tipo"></span>
+        </div>
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">Situação</span>
+          <span class="valor-visualizacao" id="visualizar-situacao"></span>
+        </div>
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">Empresa</span>
+          <span class="valor-visualizacao" id="visualizar-empresa"></span>
+        </div>
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">Serviço</span>
+          <span class="valor-visualizacao" id="visualizar-servico"></span>
+        </div>
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">CRE</span>
+          <span class="valor-visualizacao" id="visualizar-cre"></span>
+        </div>
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">Lote</span>
+          <span class="valor-visualizacao" id="visualizar-lote"></span>
+        </div>
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">Quantidade de Postos</span>
+          <span class="valor-visualizacao" id="visualizar-quantidade-postos"></span>
+        </div>
+        <div class="item-visualizacao">
+          <span class="rotulo-visualizacao">Postos Preenchidos</span>
+          <span class="valor-visualizacao" id="visualizar-postos-preenchidos"></span>
+        </div>
+      </div>
+
+      <div class="acoes-modal">
+        <button type="button" class="botao botao-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ==========================================================================
+  // Ponto de integração: em produção, o usuário logado e suas permissões vêm
+  // da sessão autenticada no backend. Aqui simulamos um "banco" de usuários
+  // compartilhado (localStorage) para que a permissão definida na aba
+  // Usuários valha de verdade nas demais telas do sistema.
+  // ==========================================================================
+  const MATRICULA_ADMIN_MASTER = '487741101';
+
+  function carregarBancoUsuarios() {
+    const banco = JSON.parse(localStorage.getItem('gestconBanco') || 'null');
+    if (banco) return banco;
+    const bancoInicial = {
+      pendentes: [],
+      ativos: [
+        { email: 'administrador do sistema', matricula: MATRICULA_ADMIN_MASTER, administrador: true, master: true }
+      ]
+    };
+    localStorage.setItem('gestconBanco', JSON.stringify(bancoInicial));
+    return bancoInicial;
+  }
+
+  const bancoUsuarios = carregarBancoUsuarios();
+  const sessaoSalva = JSON.parse(sessionStorage.getItem('gestconUsuario') || 'null');
+  const matriculaLogada = sessaoSalva ? sessaoSalva.matricula : MATRICULA_ADMIN_MASTER;
+  const usuarioLogado = bancoUsuarios.ativos.find(u => u.matricula === matriculaLogada)
+    || { matricula: matriculaLogada, administrador: false, master: false };
+
+  // Administrador: permissão de edição em Empresas, Contratos e Postos.
+  const usuarioEhAdministrador = !!usuarioLogado.administrador;
+  // Master: único perfil que acessa a aba Usuários (aprova solicitações e concede/revoga administrador).
+  const usuarioEhMaster = !!usuarioLogado.master;
+
+  // Exibe a matrícula do usuário logado na barra superior e habilita o botão "Sair"
+  const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
+  if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
+
+  function deslogar() {
+    sessionStorage.removeItem('gestconUsuario');
+    window.location.href = 'login.html';
+  }
+  if (!usuarioEhMaster) {
+    const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+    if (linkUsuarios) linkUsuarios.remove();
+  }
+
+  // Mesma base de contratos cadastrados na tela de Contratos
+  let contratos = [];
+
+  const rotulosSituacao = { ativo: 'Ativo', encerrado: 'Encerrado', rescindido: 'Rescindido' };
+  const rotulosServico = { Limpeza: 'Limpeza', Merendeiras: 'Merendeiras', 'Vigilância': 'Vigilância', Porteiros: 'Porteiros' };
+
+  const corpoTabela = document.getElementById('corpo-tabela');
+  const estadoVazio = document.getElementById('estado-vazio');
+
+  // Garante que cada contrato tenha um array de postos coerente com quantidadePostos
+  function garantirPostos(contrato) {
+    if (!Array.isArray(contrato.postos)) contrato.postos = [];
+    while (contrato.postos.length < contrato.quantidadePostos) {
+      contrato.postos.push({ municipio: '', local: '', cargaHoraria: '', status: 'vago', responsavel: '' });
+    }
+    if (contrato.postos.length > contrato.quantidadePostos) {
+      contrato.postos.length = contrato.quantidadePostos;
+    }
+  }
+  contratos.forEach(garantirPostos);
+
+  // Filtros
+  const filtroCre = document.getElementById('filtro-cre');
+  const filtroLote = document.getElementById('filtro-lote');
+  const filtroEmpresa = document.getElementById('filtro-empresa');
+  const filtroServico = document.getElementById('filtro-servico');
+  const filtroTipo = document.getElementById('filtro-tipo');
+  const botaoLimparFiltros = document.getElementById('botao-limpar-filtros');
+
+  function popularDatalist(datalist, valores) {
+    datalist.innerHTML = '';
+    valores.forEach(valor => {
+      const opcao = document.createElement('option');
+      opcao.value = valor;
+      datalist.appendChild(opcao);
+    });
+  }
+
+  function popularFiltroServico() {
+    const selecionado = filtroServico.value;
+    filtroServico.innerHTML = '<option value="">Todos</option>';
+    Object.keys(rotulosServico).forEach(valor => {
+      const opcao = document.createElement('option');
+      opcao.value = valor;
+      opcao.textContent = rotulosServico[valor];
+      filtroServico.appendChild(opcao);
+    });
+    filtroServico.value = selecionado;
+  }
+
+  function valoresUnicos(campo) {
+    return [...new Set(contratos.map(c => c[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }
+
+  function atualizarOpcoesFiltro() {
+    popularDatalist(document.getElementById('lista-cre'), valoresUnicos('cre'));
+    popularDatalist(document.getElementById('lista-lote'), valoresUnicos('lote'));
+    popularDatalist(document.getElementById('lista-empresa'), valoresUnicos('empresa'));
+    popularFiltroServico();
+  }
+
+  function contemTexto(valorContrato, textoFiltro) {
+    if (!textoFiltro) return true;
+    return (valorContrato || '').toLowerCase().includes(textoFiltro.toLowerCase().trim());
+  }
+
+  function contratosFiltrados() {
+    return contratos.filter(c =>
+      contemTexto(c.cre, filtroCre.value) &&
+      contemTexto(c.lote, filtroLote.value) &&
+      contemTexto(c.empresa, filtroEmpresa.value) &&
+      (!filtroServico.value || c.servico === filtroServico.value) &&
+      (!filtroTipo.value || c.tipo === filtroTipo.value)
+    );
+  }
+
+  [filtroServico, filtroTipo].forEach(select => {
+    select.addEventListener('change', renderizarTabela);
+  });
+  [filtroCre, filtroLote, filtroEmpresa].forEach(input => {
+    input.addEventListener('input', renderizarTabela);
+  });
+
+  botaoLimparFiltros.addEventListener('click', () => {
+    filtroCre.value = '';
+    filtroLote.value = '';
+    filtroEmpresa.value = '';
+    filtroServico.value = '';
+    filtroTipo.value = '';
+    renderizarTabela();
+  });
+
+  function formatarMoeda(centavos) {
+    return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function postosPreenchidos(contrato) {
+    return contrato.postos.filter(p => p.status === 'ocupado').length;
+  }
+
+  function atualizarDashboardPostos() {
+    let total = 0;
+    let implantados = 0;
+    contratos.forEach(contrato => {
+      total += contrato.quantidadePostos;
+      implantados += postosPreenchidos(contrato);
+    });
+    document.getElementById('indicador-total').textContent = total;
+    document.getElementById('indicador-implantados').textContent = implantados;
+    document.getElementById('indicador-vagos').textContent = total - implantados;
+  }
+
+  function renderizarTabela() {
+    atualizarOpcoesFiltro();
+    atualizarDashboardPostos();
+    corpoTabela.innerHTML = '';
+    const listaFiltrada = contratosFiltrados();
+    estadoVazio.style.display = listaFiltrada.length ? 'none' : 'block';
+    estadoVazio.textContent = contratos.length
+      ? 'Nenhum contrato encontrado para os filtros selecionados.'
+      : 'Nenhum contrato cadastrado ainda.';
+    listaFiltrada.forEach((contrato) => {
+      const indice = contratos.indexOf(contrato);
+      const linha = document.createElement('tr');
+      const seloTipo = contrato.tipo === 'dispensa'
+        ? '<span class="selo-tipo dispensa">Dispensa de Licitação</span>'
+        : '<span class="selo-tipo licitacao">Licitação</span>';
+      const seloSituacao = `<span class="selo-situacao ${contrato.situacao}">${rotulosSituacao[contrato.situacao] || ''}</span>`;
+      const preenchidos = postosPreenchidos(contrato);
+      linha.innerHTML = `
+        <td class="numero">${contrato.numeroContrato}</td>
+        <td>${seloTipo}</td>
+        <td>${seloSituacao}</td>
+        <td>${contrato.empresa}</td>
+        <td>${contrato.servico}</td>
+        <td class="suave">${contrato.cre}</td>
+        <td class="suave">${contrato.lote}</td>
+        <td>${contrato.quantidadePostos}</td>
+        <td class="contagem-postos"><span style="color:#1B2430;font-weight:600;">${preenchidos}</span> <span class="suave" style="color:#5B6672;">/ ${contrato.quantidadePostos}</span></td>
+        <td>
+          <div class="acoes-linha">
+            <button class="botao-icone" onclick="visualizarContrato(${indice})">Visualizar</button>
+            ${usuarioEhAdministrador ? `<button class="botao-gerenciar-postos" onclick="abrirModalPostos(${indice})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
+              Gerenciar Postos
+            </button>` : ''}
+          </div>
+        </td>`;
+      corpoTabela.appendChild(linha);
+    });
+  }
+
+  // Modal de gerenciamento de postos
+  const sobreposicaoPostos = document.getElementById('sobreposicao-postos');
+  const sobreposicaoVisualizar = document.getElementById('sobreposicao-visualizar');
+  const listaPostosEl = document.getElementById('lista-postos');
+  const resumoPostosEl = document.getElementById('resumo-postos');
+  const botaoSalvarPostos = document.getElementById('botao-salvar-postos');
+
+  let indiceContratoEmGestao = null;
+  let postosEmEdicao = [];
+
+  function abrirModalPostos(indice) {
+    if (!usuarioEhAdministrador) return;
+    indiceContratoEmGestao = indice;
+    const contrato = contratos[indice];
+    garantirPostos(contrato);
+    postosEmEdicao = contrato.postos.map(p => ({ ...p }));
+
+    document.getElementById('titulo-modal-postos').textContent = `Gerenciar Postos — Contrato ${contrato.numeroContrato}`;
+    document.getElementById('instrucao-modal-postos').textContent = `${contrato.empresa} · ${contrato.servico} · ${contrato.cre}, ${contrato.lote}`;
+
+    renderizarListaPostos();
+    sobreposicaoPostos.classList.add('aberta');
+  }
+
+  function fecharModalPostos() {
+    sobreposicaoPostos.classList.remove('aberta');
+    indiceContratoEmGestao = null;
+    postosEmEdicao = [];
+  }
+
+  function visualizarContrato(indice) {
+    const contrato = contratos[indice];
+    document.getElementById('visualizar-numero-contrato').textContent = contrato.numeroContrato || '—';
+    document.getElementById('visualizar-tipo').textContent = contrato.tipo === 'dispensa' ? 'Dispensa de Licitação' : 'Licitação';
+    document.getElementById('visualizar-situacao').textContent = rotulosSituacao[contrato.situacao] || '—';
+    document.getElementById('visualizar-empresa').textContent = contrato.empresa || '—';
+    document.getElementById('visualizar-servico').textContent = contrato.servico || '—';
+    document.getElementById('visualizar-cre').textContent = contrato.cre || '—';
+    document.getElementById('visualizar-lote').textContent = contrato.lote || '—';
+    document.getElementById('visualizar-quantidade-postos').textContent = contrato.quantidadePostos ?? '—';
+    document.getElementById('visualizar-postos-preenchidos').textContent = `${postosPreenchidos(contrato)} / ${contrato.quantidadePostos}`;
+    sobreposicaoVisualizar.classList.add('aberta');
+  }
+
+  function fecharModalVisualizar() {
+    sobreposicaoVisualizar.classList.remove('aberta');
+  }
+
+  function renderizarListaPostos() {
+    listaPostosEl.innerHTML = '';
+    postosEmEdicao.forEach((posto, i) => {
+      const item = document.createElement('div');
+      item.className = 'posto-item';
+      item.innerHTML = `
+        <div class="posto-cabecalho">
+          <span class="numero-posto">Posto ${String(i + 1).padStart(2, '0')}</span>
+        </div>
+        <div class="campos-posto">
+          <div class="subcampo">
+            <label>Município</label>
+            <input type="text" placeholder="Ex.: Porto Alegre" value="${posto.municipio || ''}" data-campo="municipio" data-indice="${i}">
+          </div>
+          <div class="subcampo">
+            <label>Local</label>
+            <input type="text" placeholder="Local / unidade do posto" value="${posto.local || ''}" data-campo="local" data-indice="${i}">
+          </div>
+          <div class="subcampo">
+            <label>Carga Horária</label>
+            <input type="text" placeholder="Ex.: 40h semanais" value="${posto.cargaHoraria || ''}" data-campo="cargaHoraria" data-indice="${i}">
+          </div>
+          <div class="subcampo">
+            <label>Status</label>
+            <select data-campo="status" data-indice="${i}" class="${posto.status === 'ocupado' ? 'status-ocupado' : 'status-vago'}">
+              <option value="vago" ${posto.status === 'vago' ? 'selected' : ''}>Vago</option>
+              <option value="ocupado" ${posto.status === 'ocupado' ? 'selected' : ''}>Ocupado</option>
+            </select>
+          </div>
+        </div>`;
+      listaPostosEl.appendChild(item);
+    });
+
+    listaPostosEl.querySelectorAll('input[data-campo="municipio"]').forEach(input => {
+      input.addEventListener('input', (e) => {
+        postosEmEdicao[Number(e.target.dataset.indice)].municipio = e.target.value;
+      });
+    });
+    listaPostosEl.querySelectorAll('input[data-campo="local"]').forEach(input => {
+      input.addEventListener('input', (e) => {
+        postosEmEdicao[Number(e.target.dataset.indice)].local = e.target.value;
+      });
+    });
+    listaPostosEl.querySelectorAll('input[data-campo="cargaHoraria"]').forEach(input => {
+      input.addEventListener('input', (e) => {
+        postosEmEdicao[Number(e.target.dataset.indice)].cargaHoraria = e.target.value;
+      });
+    });
+    listaPostosEl.querySelectorAll('select[data-campo="status"]').forEach(select => {
+      select.addEventListener('change', (e) => {
+        const i = Number(e.target.dataset.indice);
+        postosEmEdicao[i].status = e.target.value;
+        e.target.className = e.target.value === 'ocupado' ? 'status-ocupado' : 'status-vago';
+        atualizarResumoPostos();
+      });
+    });
+    atualizarResumoPostos();
+  }
+
+  function atualizarResumoPostos() {
+    const total = postosEmEdicao.length;
+    const ocupados = postosEmEdicao.filter(p => p.status === 'ocupado').length;
+    resumoPostosEl.textContent = `${total} posto(s) no total — ${ocupados} ocupado(s), ${total - ocupados} vago(s).`;
+  }
+
+  botaoSalvarPostos.addEventListener('click', () => {
+    if (!usuarioEhAdministrador) return;
+    if (indiceContratoEmGestao === null) return;
+    const contrato = contratos[indiceContratoEmGestao];
+    contrato.postos = postosEmEdicao.map(p => ({ ...p }));
+    contrato.quantidadePostos = contrato.postos.length;
+    renderizarTabela();
+    renderizarRelatorioPostos();
+    fecharModalPostos();
+  });
+
+  // ---------- Abas da página ----------
+  function mostrarVista(nome) {
+    document.getElementById('vista-contratos').classList.toggle('ativa', nome === 'contratos');
+    document.getElementById('vista-relatorio-postos').classList.toggle('ativa', nome === 'relatorio-postos');
+    document.getElementById('aba-contratos').classList.toggle('ativa', nome === 'contratos');
+    document.getElementById('aba-relatorio-postos').classList.toggle('ativa', nome === 'relatorio-postos');
+    if (nome === 'relatorio-postos') renderizarRelatorioPostos();
+  }
+
+  // ---------- Relatório de Postos ----------
+  const corpoTabelaRelatorio = document.getElementById('corpo-tabela-relatorio-postos');
+  const estadoVazioRelatorio = document.getElementById('estado-vazio-relatorio-postos');
+  const filtroRelatorioCre = document.getElementById('filtro-relatorio-cre');
+  const filtroRelatorioLote = document.getElementById('filtro-relatorio-lote');
+  const filtroRelatorioMunicipio = document.getElementById('filtro-relatorio-municipio');
+  const filtroRelatorioServico = document.getElementById('filtro-relatorio-servico');
+  const filtroRelatorioStatus = document.getElementById('filtro-relatorio-status');
+  const botaoLimparFiltrosRelatorio = document.getElementById('botao-limpar-filtros-relatorio');
+
+  const rotulosStatusPosto = { ocupado: 'Ocupado', vago: 'Vago' };
+
+  // Achata os postos de todos os contratos em uma única lista, trazendo os dados do contrato
+  function todosPostos() {
+    return contratos.flatMap(contrato =>
+      (contrato.postos || []).map(posto => ({
+        municipio: posto.municipio || '',
+        local: posto.local || '',
+        cargaHoraria: posto.cargaHoraria || '',
+        status: posto.status || 'vago',
+        servico: contrato.servico || '',
+        cre: contrato.cre || '',
+        lote: contrato.lote || '',
+        numeroContrato: contrato.numeroContrato || ''
+      }))
+    );
+  }
+
+  function popularFiltroRelatorioServico() {
+    const selecionado = filtroRelatorioServico.value;
+    filtroRelatorioServico.innerHTML = '<option value="">Todos</option>';
+    Object.keys(rotulosServico).forEach(valor => {
+      const opcao = document.createElement('option');
+      opcao.value = valor;
+      opcao.textContent = rotulosServico[valor];
+      filtroRelatorioServico.appendChild(opcao);
+    });
+    filtroRelatorioServico.value = selecionado;
+  }
+
+  function atualizarOpcoesFiltroRelatorio(lista) {
+    popularDatalist(document.getElementById('lista-relatorio-cre'), [...new Set(lista.map(p => p.cre).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+    popularDatalist(document.getElementById('lista-relatorio-lote'), [...new Set(lista.map(p => p.lote).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+    popularDatalist(document.getElementById('lista-relatorio-municipio'), [...new Set(lista.map(p => p.municipio).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+    popularFiltroRelatorioServico();
+  }
+
+  function postosRelatorioFiltrados() {
+    const lista = todosPostos();
+    return lista.filter(p =>
+      contemTexto(p.cre, filtroRelatorioCre.value) &&
+      contemTexto(p.lote, filtroRelatorioLote.value) &&
+      contemTexto(p.municipio, filtroRelatorioMunicipio.value) &&
+      (!filtroRelatorioServico.value || p.servico === filtroRelatorioServico.value) &&
+      (!filtroRelatorioStatus.value || p.status === filtroRelatorioStatus.value)
+    );
+  }
+
+  function renderizarRelatorioPostos() {
+    atualizarOpcoesFiltroRelatorio(todosPostos());
+    corpoTabelaRelatorio.innerHTML = '';
+    const listaFiltrada = postosRelatorioFiltrados();
+    estadoVazioRelatorio.style.display = listaFiltrada.length ? 'none' : 'block';
+    estadoVazioRelatorio.textContent = todosPostos().length
+      ? 'Nenhum posto encontrado para os filtros selecionados.'
+      : 'Nenhum posto cadastrado ainda.';
+    listaFiltrada.forEach(posto => {
+      const linha = document.createElement('tr');
+      const seloStatus = `<span class="selo-situacao ${posto.status === 'ocupado' ? 'ativo' : 'rescindido'}">${rotulosStatusPosto[posto.status] || ''}</span>`;
+      linha.innerHTML = `
+        <td>${posto.municipio || '—'}</td>
+        <td>${posto.local || '—'}</td>
+        <td class="suave">${posto.cargaHoraria || '—'}</td>
+        <td>${posto.servico || '—'}</td>
+        <td class="suave">${posto.cre || '—'}</td>
+        <td class="suave">${posto.lote || '—'}</td>
+        <td class="numero">${posto.numeroContrato || '—'}</td>
+        <td>${seloStatus}</td>`;
+      corpoTabelaRelatorio.appendChild(linha);
+    });
+  }
+
+  [filtroRelatorioServico, filtroRelatorioStatus].forEach(select => {
+    select.addEventListener('change', renderizarRelatorioPostos);
+  });
+  [filtroRelatorioCre, filtroRelatorioLote, filtroRelatorioMunicipio].forEach(input => {
+    input.addEventListener('input', renderizarRelatorioPostos);
+  });
+  botaoLimparFiltrosRelatorio.addEventListener('click', () => {
+    filtroRelatorioCre.value = '';
+    filtroRelatorioLote.value = '';
+    filtroRelatorioMunicipio.value = '';
+    filtroRelatorioServico.value = '';
+    filtroRelatorioStatus.value = '';
+    renderizarRelatorioPostos();
+  });
+
+  // ---------- Exportação do Relatório de Postos ----------
+  function dadosParaExportacaoPostos(lista) {
+    return lista.map(p => ({
+      'Município': p.municipio || '',
+      'Local': p.local || '',
+      'Carga Horária': p.cargaHoraria || '',
+      'Serviço': p.servico || '',
+      'CRE': p.cre || '',
+      'Lote': p.lote || '',
+      'Nº Contrato': p.numeroContrato || '',
+      'Status': rotulosStatusPosto[p.status] || ''
+    }));
+  }
+
+  function exportarExcelPostos() {
+    const lista = postosRelatorioFiltrados();
+    if (!lista.length) { alert('Não há postos para exportar com os filtros atuais.'); return; }
+    const dados = dadosParaExportacaoPostos(lista);
+    const planilha = XLSX.utils.json_to_sheet(dados);
+    planilha['!cols'] = Object.keys(dados[0]).map(chave => ({
+      wch: Math.max(chave.length, ...dados.map(linha => String(linha[chave]).length)) + 2
+    }));
+    const livro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(livro, planilha, 'Postos');
+    const dataAtual = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(livro, `relatorio_postos_${dataAtual}.xlsx`);
+  }
+
+  function exportarPDFPostos() {
+    const lista = postosRelatorioFiltrados();
+    if (!lista.length) { alert('Não há postos para exportar com os filtros atuais.'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const dados = dadosParaExportacaoPostos(lista);
+    const colunas = Object.keys(dados[0]);
+    const linhas = dados.map(linha => colunas.map(coluna => linha[coluna]));
+
+    const filtrosAtivos = [];
+    if (filtroRelatorioCre.value) filtrosAtivos.push(`CRE: ${filtroRelatorioCre.value}`);
+    if (filtroRelatorioLote.value) filtrosAtivos.push(`Lote: ${filtroRelatorioLote.value}`);
+    if (filtroRelatorioMunicipio.value) filtrosAtivos.push(`Município: ${filtroRelatorioMunicipio.value}`);
+    if (filtroRelatorioServico.value) filtrosAtivos.push(`Serviço: ${filtroRelatorioServico.value}`);
+    if (filtroRelatorioStatus.value) filtrosAtivos.push(`Status: ${rotulosStatusPosto[filtroRelatorioStatus.value]}`);
+
+    doc.setFontSize(14);
+    doc.setTextColor(0, 81, 46);
+    doc.text('Relatório de Postos', 40, 36);
+    doc.setFontSize(9);
+    doc.setTextColor(85, 101, 92);
+    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} — ${lista.length} posto(s)`, 40, 52);
+    let proximaLinhaY = 66;
+    if (filtrosAtivos.length) {
+      doc.setFontSize(8.5);
+      doc.text(`Filtros aplicados: ${filtrosAtivos.join(' · ')}`, 40, 64);
+      proximaLinhaY = 76;
+    }
+
+    doc.autoTable({
+      head: [colunas],
+      body: linhas,
+      startY: proximaLinhaY,
+      styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak' },
+      headStyles: { fillColor: [0, 81, 46], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 249] },
+      margin: { left: 30, right: 30 }
+    });
+
+    const dataAtual = new Date().toISOString().slice(0, 10);
+    doc.save(`relatorio_postos_${dataAtual}.pdf`);
+  }
+
+  renderizarTabela();
+</script>
+
+</body>
+</html>

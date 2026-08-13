@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acesso ao Sistema — GestCon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde: #00512E;      /* verde institucional, base da bandeira do RS */
+    --verde-escuro: #00381F;
+    --vermelho: #B7212B;   /* vermelho da bandeira */
+    --dourado: #E3A63E;    /* amarelo/dourado da bandeira, usado como acento */
+    --bg: #F3F5F2;
+    --card-bg: #FFFFFF;
+    --texto: #16241D;
+    --texto-suave: #55655C;
+    --linha: #DDE3DD;
+    --foco: #0B6B3A;
+    --radius: 10px;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ height: 100%; }
+  body{
+    margin: 0;
+    font-family: 'Public Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Faixa tricolor — assinatura visual do Estado */
+  .faixa-estado{
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--verde) 0 33.33%, var(--vermelho) 33.33% 66.66%, var(--dourado) 66.66% 100%);
+    flex-shrink: 0;
+  }
+
+  header.topo{
+    padding: 40px 24px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+
+  .brasao{
+    width: 76px;
+    height: 76px;
+    flex-shrink: 0;
+  }
+
+  .nome-sistema{
+    margin-top: 10px;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--texto);
+  }
+
+  .nome-sistema span{
+    color: var(--verde);
+  }
+
+  .descricao-sistema{
+    max-width: 460px;
+    font-size: 14.5px;
+    color: var(--texto-suave);
+    margin-top: 2px;
+  }
+
+  main{
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 20px 40px;
+  }
+
+  .cartao-login{
+    background: var(--card-bg);
+    border: 1px solid var(--linha);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(15, 35, 25, 0.04), 0 10px 30px rgba(15, 35, 25, 0.06);
+    width: 100%;
+    max-width: 400px;
+    padding: 36px 34px 30px;
+  }
+
+  .cartao-login h1{
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: var(--texto);
+  }
+
+  .cartao-login p.instrucao{
+    font-size: 13.5px;
+    color: var(--texto-suave);
+    margin: 0 0 22px;
+  }
+
+  .campo{
+    margin-bottom: 16px;
+  }
+
+  .campo label{
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto);
+    margin-bottom: 6px;
+  }
+
+  .campo-entrada{
+    position: relative;
+  }
+
+  .campo-entrada input{
+    width: 100%;
+    padding: 11px 13px 11px 40px;
+    border: 1px solid var(--linha);
+    border-radius: 8px;
+    font-size: 14.5px;
+    font-family: inherit;
+    color: var(--texto);
+    background: #FBFCFB;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+
+  .campo-entrada input:focus{
+    outline: none;
+    border-color: var(--foco);
+    box-shadow: 0 0 0 3px rgba(11,107,58,0.14);
+    background: #fff;
+  }
+
+  .campo-entrada svg{
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    stroke: var(--texto-suave);
+  }
+
+  .linha-opcoes{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: -4px 0 20px;
+    font-size: 12.5px;
+  }
+
+  .linha-opcoes label{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--texto-suave);
+    cursor: pointer;
+  }
+
+  .linha-opcoes a{
+    color: var(--verde);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .linha-opcoes a:hover{ text-decoration: underline; }
+
+  .botao-acessar{
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--verde);
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: background .15s ease, transform .05s ease;
+  }
+
+  .botao-acessar:hover{ background: var(--verde-escuro); }
+  .botao-acessar:active{ transform: translateY(1px); }
+  .botao-acessar:focus-visible{
+    outline: 3px solid var(--dourado);
+    outline-offset: 2px;
+  }
+
+  .linha-solicitar{
+    margin-top: 18px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--texto-suave);
+  }
+
+  .linha-solicitar button{
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--verde);
+    font-weight: 700;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .linha-solicitar button:hover{ text-decoration: underline; }
+
+  /* Etapa: escolha do modo de acesso */
+  .opcoes-modo-acesso{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .botao-modo-acesso{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    background: #FBFCFB;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, transform .05s ease;
+  }
+  .botao-modo-acesso:hover{ border-color: var(--foco); background: #fff; }
+  .botao-modo-acesso:active{ transform: translateY(1px); }
+  .botao-modo-acesso:focus-visible{
+    outline: 3px solid var(--dourado);
+    outline-offset: 2px;
+  }
+
+  .icone-modo-acesso{
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #E7F3EC;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icone-modo-acesso svg{ width: 19px; height: 19px; stroke: var(--foco); }
+  .botao-modo-acesso.administrador .icone-modo-acesso{ background: #FBF1DE; }
+  .botao-modo-acesso.administrador .icone-modo-acesso svg{ stroke: var(--dourado); }
+
+  .texto-modo-acesso{ display: flex; flex-direction: column; gap: 2px; }
+  .titulo-modo-acesso{ font-size: 14px; font-weight: 700; color: var(--texto); }
+  .descricao-modo-acesso{ font-size: 12.5px; color: var(--texto-suave); }
+
+  .linha-usuario-identificado{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--texto-suave);
+    margin: -6px 0 20px;
+  }
+  .linha-usuario-identificado strong{ color: var(--texto); }
+
+  footer{
+    padding: 18px 20px 26px;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--texto-suave);
+    line-height: 1.7;
+  }
+
+  footer a{ color: var(--texto-suave); }
+
+  /* Modal de solicitação de acesso */
+  .sobreposicao{
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,25,35,0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .sobreposicao.aberta{ display: flex; }
+  .modal-cartao{
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 30px 30px 26px;
+  }
+  .modal-cartao h2{
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: var(--texto);
+  }
+  .modal-cartao p.instrucao{
+    font-size: 13px;
+    color: var(--texto-suave);
+    margin: 0 0 20px;
+  }
+  .campo{ margin-bottom: 16px; }
+  .campo label{
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto);
+    margin-bottom: 6px;
+  }
+  .campo .campo-entrada input{
+    width: 100%;
+    padding: 11px 13px 11px 40px;
+    border: 1px solid var(--linha);
+    border-radius: 8px;
+    font-size: 14.5px;
+    font-family: inherit;
+    color: var(--texto);
+    background: #FBFCFB;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .campo .campo-entrada input:focus{
+    outline: none;
+    border-color: var(--foco);
+    box-shadow: 0 0 0 3px rgba(11,107,58,0.14);
+    background: #fff;
+  }
+  .campo .campo-entrada input.invalido{
+    border-color: var(--vermelho);
+    box-shadow: none;
+  }
+  .mensagem-erro{
+    display: none;
+    font-size: 12px;
+    color: var(--vermelho);
+    margin-top: 5px;
+  }
+  .mensagem-erro.visivel{ display: block; }
+  .acoes-modal{
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .botao{
+    flex: 1;
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+  }
+  .botao-salvar{ background: var(--verde); color: #fff; }
+  .botao-salvar:hover{ background: var(--verde-escuro); }
+  .botao-cancelar{ background: #fff; color: var(--texto); border: 1px solid var(--linha); }
+  .botao-cancelar:hover{ border-color: var(--texto-suave); }
+
+  .estado-confirmacao{
+    text-align: center;
+    padding: 8px 0 4px;
+  }
+  .estado-confirmacao .icone-sucesso{
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #E7F3EC;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .estado-confirmacao .icone-sucesso svg{
+    width: 26px;
+    height: 26px;
+    stroke: var(--foco);
+  }
+  .estado-confirmacao h2{ margin-bottom: 8px; }
+  .estado-confirmacao p{
+    font-size: 13.5px;
+    color: var(--texto-suave);
+    margin: 0 0 22px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 420px){
+    .cartao-login{ padding: 28px 22px 24px; }
+    .nome-sistema{ font-size: 23px; }
+    header.topo{ padding: 30px 20px 22px; }
+    .modal-cartao{ padding: 24px 20px 22px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="faixa-estado"></div>
+
+  <header class="topo">
+    <!-- Placeholder do brasão oficial: substitua o SVG abaixo pelo arquivo oficial
+         do Brasão de Armas / logomarca do Governo do RS fornecido pela Secom -->
+    <svg class="brasao" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Brasão do Estado do Rio Grande do Sul (placeholder)">
+      <circle cx="50" cy="50" r="47" fill="#FFFFFF" stroke="#00512E" stroke-width="3"/>
+      <path d="M50 3 A47 47 0 0 1 50 97 Z" fill="#B7212B" opacity="0.9"/>
+      <path d="M50 3 A47 47 0 0 0 50 97 Z" fill="#00512E" opacity="0.9"/>
+      <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
+      <text x="50" y="58" text-anchor="middle" font-family="Public Sans, sans-serif" font-weight="800" font-size="26" fill="#00512E">RS</text>
+      <circle cx="50" cy="50" r="47" fill="none" stroke="#E3A63E" stroke-width="2"/>
+    </svg>
+
+    <div class="nome-sistema">GestCon <span>| Sistema Integrado de Gestão de Contratos</span></div>
+    <div class="descricao-sistema">Acesso restrito a usuários autorizados. Utilize suas credenciais institucionais para continuar.</div>
+  </header>
+
+  <main>
+    <section class="cartao-login" aria-labelledby="titulo-login">
+
+      <div id="etapa-credenciais">
+        <h1 id="titulo-login">Entrar no sistema</h1>
+        <p class="instrucao">Informe seu usuário e senha institucionais.</p>
+
+        <form id="form-login" novalidate>
+          <div class="campo">
+            <label for="usuario">Usuário</label>
+            <div class="campo-entrada">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="usuario" name="usuario" placeholder="CPF, matrícula ou nome de usuário" autocomplete="username">
+            </div>
+            <div class="mensagem-erro" id="erro-login-usuario">Informe seu usuário ou matrícula.</div>
+          </div>
+
+          <div class="campo">
+            <label for="senha">Senha</label>
+            <div class="campo-entrada">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" id="senha" name="senha" placeholder="Digite sua senha" autocomplete="current-password">
+            </div>
+            <div class="mensagem-erro" id="erro-login-senha">Informe sua senha.</div>
+          </div>
+
+          <div class="linha-opcoes">
+            <label><input type="checkbox" name="manter"> Manter conectado</label>
+            <a href="#">Esqueci minha senha</a>
+          </div>
+
+          <button type="submit" class="botao-acessar">Acessar o sistema</button>
+        </form>
+
+        <div class="linha-solicitar">
+          Ainda não tem acesso? <button type="button" onclick="abrirModalSolicitar()">Solicitar acesso</button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer>
+    GestCon — Todos os direitos reservados<br>
+    <a href="#">Política de Privacidade</a> · <a href="#">Acessibilidade</a> · <a href="#">Suporte Técnico</a>
+  </footer>
+
+  <!-- Modal: solicitar acesso -->
+  <div class="sobreposicao" id="sobreposicao-solicitar">
+    <div class="modal-cartao" id="cartao-solicitar">
+
+      <div id="etapa-formulario">
+        <h2>Solicitar acesso ao sistema</h2>
+        <p class="instrucao">Preencha os dados abaixo. Sua solicitação será analisada por um administrador antes da liberação.</p>
+
+        <form id="form-solicitar" novalidate>
+          <div class="campo">
+            <label for="solicitar-email">E-mail</label>
+            <div class="campo-entrada">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+              <input type="email" id="solicitar-email" name="email" placeholder="nome@orgao.rs.gov.br" autocomplete="email">
+            </div>
+            <div class="mensagem-erro" id="erro-solicitar-email">Informe um e-mail válido.</div>
+          </div>
+
+          <div class="campo">
+            <label for="solicitar-matricula">Matrícula</label>
+            <div class="campo-entrada">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h6"/><circle cx="8.5" cy="16.2" r="0.4" fill="currentColor" stroke="none"/></svg>
+              <input type="text" id="solicitar-matricula" name="matricula" placeholder="Número de matrícula" inputmode="numeric">
+            </div>
+            <div class="mensagem-erro" id="erro-solicitar-matricula">Informe sua matrícula.</div>
+          </div>
+
+          <div class="campo">
+            <label for="solicitar-senha">Senha</label>
+            <div class="campo-entrada">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" id="solicitar-senha" name="senha" placeholder="Crie uma senha de acesso" autocomplete="new-password">
+            </div>
+            <div class="mensagem-erro" id="erro-solicitar-senha">A senha deve ter pelo menos 6 caracteres.</div>
+          </div>
+
+          <div class="acoes-modal">
+            <button type="button" class="botao botao-cancelar" onclick="fecharModalSolicitar()">Cancelar</button>
+            <button type="submit" class="botao botao-salvar">Enviar solicitação</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="etapa-confirmacao" class="estado-confirmacao" style="display:none">
+        <div class="icone-sucesso">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2>Solicitação enviada</h2>
+        <p>Seu pedido de acesso foi enviado ao administrador do sistema. Você poderá entrar assim que ele for aprovado.</p>
+        <div class="acoes-modal">
+          <button type="button" class="botao botao-salvar" onclick="fecharModalSolicitar()">Fechar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script type="module">
+  import { supabase, gerarEmailDaMatricula } from './js/supabase.js';
+
+  // ==========================================
+  // LÓGICA DE LOGIN
+  // ==========================================
+  const formLogin = document.getElementById('form-login');
+  const campoUsuarioLogin = document.getElementById('usuario');
+  const campoSenhaLogin = document.getElementById('senha');
+  const erroUsuarioLogin = document.getElementById('erro-login-usuario');
+  const textoOriginalErroUsuario = erroUsuarioLogin.textContent;
+
+  formLogin.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+
+    [campoUsuarioLogin, campoSenhaLogin].forEach(c => c.classList.remove('invalido'));
+    ['erro-login-usuario', 'erro-login-senha'].forEach(id => {
+      document.getElementById(id).classList.remove('visivel');
+    });
+    erroUsuarioLogin.textContent = textoOriginalErroUsuario;
+
+    let valido = true;
+    if (!campoUsuarioLogin.value.trim()) {
+      campoUsuarioLogin.classList.add('invalido');
+      erroUsuarioLogin.classList.add('visivel');
+      valido = false;
+    }
+    if (!campoSenhaLogin.value) {
+      campoSenhaLogin.classList.add('invalido');
+      document.getElementById('erro-login-senha').classList.add('visivel');
+      valido = false;
+    }
+    if (!valido) return;
+
+    // Desabilitar botão durante carregamento
+    const botaoAcessar = formLogin.querySelector('.botao-acessar');
+    const textoBotaoOriginal = botaoAcessar.textContent;
+    botaoAcessar.textContent = 'Autenticando...';
+    botaoAcessar.disabled = true;
+
+    const matricula = campoUsuarioLogin.value.trim();
+    const emailGerado = gerarEmailDaMatricula(matricula);
+
+    // Tentativa de login no Supabase
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: emailGerado,
+      password: campoSenhaLogin.value
+    });
+
+    if (authError) {
+      campoUsuarioLogin.classList.add('invalido');
+      campoSenhaLogin.classList.add('invalido');
+      erroUsuarioLogin.textContent = 'Matrícula ou senha incorretos.';
+      erroUsuarioLogin.classList.add('visivel');
+      botaoAcessar.textContent = textoBotaoOriginal;
+      botaoAcessar.disabled = false;
+      return;
+    }
+
+    // Verificar se o perfil foi aprovado pelo master
+    const { data: perfil, error: perfilError } = await supabase
+      .from('perfis')
+      .select('aprovado')
+      .eq('id', authData.user.id)
+      .single();
+
+    if (perfilError || !perfil?.aprovado) {
+      await supabase.auth.signOut(); // Desloga imediatamente
+      campoUsuarioLogin.classList.add('invalido');
+      erroUsuarioLogin.textContent = 'Seu acesso ainda está pendente de aprovação pelo Administrador.';
+      erroUsuarioLogin.classList.add('visivel');
+      botaoAcessar.textContent = textoBotaoOriginal;
+      botaoAcessar.disabled = false;
+      return;
+    }
+
+    // Tudo certo, redireciona
+    window.location.href = 'postos.html';
+  });
+
+  // ==========================================
+  // LÓGICA DE SOLICITAR ACESSO (CADASTRO)
+  // ==========================================
+  const sobreposicaoSolicitar = document.getElementById('sobreposicao-solicitar');
+  const etapaFormulario = document.getElementById('etapa-formulario');
+  const etapaConfirmacao = document.getElementById('etapa-confirmacao');
+  const formSolicitar = document.getElementById('form-solicitar');
+  const campoEmailSolicitar = document.getElementById('solicitar-email');
+  const campoMatriculaSolicitar = document.getElementById('solicitar-matricula');
+  const campoSenhaSolicitar = document.getElementById('solicitar-senha');
+
+  window.abrirModalSolicitar = function() {
+    formSolicitar.reset();
+    limparErrosSolicitar();
+    etapaFormulario.style.display = 'block';
+    etapaConfirmacao.style.display = 'none';
+    sobreposicaoSolicitar.classList.add('aberta');
+    campoEmailSolicitar.focus();
+  }
+
+  window.fecharModalSolicitar = function() {
+    sobreposicaoSolicitar.classList.remove('aberta');
+  }
+
+  function limparErrosSolicitar() {
+    [campoEmailSolicitar, campoMatriculaSolicitar, campoSenhaSolicitar].forEach(c => c.classList.remove('invalido'));
+    ['erro-solicitar-email', 'erro-solicitar-matricula', 'erro-solicitar-senha'].forEach(id => {
+      document.getElementById(id).classList.remove('visivel');
+    });
+  }
+
+  function emailValido(valor) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor.trim());
+  }
+
+  formSolicitar.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    limparErrosSolicitar();
+    let valido = true;
+
+    if (!emailValido(campoEmailSolicitar.value)) {
+      campoEmailSolicitar.classList.add('invalido');
+      document.getElementById('erro-solicitar-email').classList.add('visivel');
+      valido = false;
+    }
+    if (!campoMatriculaSolicitar.value.trim()) {
+      campoMatriculaSolicitar.classList.add('invalido');
+      document.getElementById('erro-solicitar-matricula').classList.add('visivel');
+      valido = false;
+    }
+    if (campoSenhaSolicitar.value.length < 6) {
+      campoSenhaSolicitar.classList.add('invalido');
+      document.getElementById('erro-solicitar-senha').classList.add('visivel');
+      valido = false;
+    }
+
+    if (!valido) return;
+
+    const matricula = campoMatriculaSolicitar.value.trim();
+    const emailReal = campoEmailSolicitar.value.trim();
+    const emailGeradoParaLogin = gerarEmailDaMatricula(matricula);
+
+    const botaoSalvar = formSolicitar.querySelector('.botao-salvar');
+    const textoBotaoOriginal = botaoSalvar.textContent;
+    botaoSalvar.textContent = 'Enviando...';
+    botaoSalvar.disabled = true;
+
+    // 1. Criar o usuário no Auth (usando o email gerado da matrícula para o login)
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: emailGeradoParaLogin,
+      password: campoSenhaSolicitar.value
+    });
+
+    if (authError) {
+      alert("Erro ao criar usuário: " + authError.message);
+      botaoSalvar.textContent = textoBotaoOriginal;
+      botaoSalvar.disabled = false;
+      return;
+    }
+
+    // 2. Criar o registro na tabela perfis com o email real que ele digitou
+    const { error: perfilError } = await supabase.from('perfis').insert([{
+      id: authData.user.id,
+      email: emailReal,
+      matricula: matricula,
+      papel: 'leitor', // começa como leitor
+      aprovado: false  // pendente de aprovação
+    }]);
+
+    if (perfilError) {
+      // Se deu erro ao inserir perfil, o banco já limpa o usuário do Auth graças à política (ou deveria).
+      alert("Erro ao registrar dados do perfil: " + perfilError.message);
+      botaoSalvar.textContent = textoBotaoOriginal;
+      botaoSalvar.disabled = false;
+      return;
+    }
+
+    // Desloga imediatamente pois acabou de se registrar
+    await supabase.auth.signOut();
+
+    etapaFormulario.style.display = 'none';
+    etapaConfirmacao.style.display = 'block';
+  });
+</script>
+
+</body>
+</html>

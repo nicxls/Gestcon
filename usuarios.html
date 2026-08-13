@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Usuários — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde: #00512E;
+    --verde-escuro: #00381F;
+    --verde-mais-escuro: #042415;
+    --bg: #F4F6F8;
+    --texto: #1B2430;
+    --texto-suave: #5B6672;
+    --linha: #DDE3E9;
+    --erro: #B3261E;
+    --erro-bg: #FBECEB;
+    --sucesso: #1E7B45;
+    --pendente: #B7791F;
+    --pendente-bg: #FBF3E4;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    font-family: 'Public Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .faixa-estado{
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, #00512E 0 33.33%, #B7212B 33.33% 66.66%, #E3A63E 66.66% 100%);
+    flex-shrink: 0;
+  }
+
+  .layout{
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  /* Menu lateral */
+  .menu-lateral{
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--verde-mais-escuro);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
+  .menu-lateral .marca{
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .menu-lateral .marca .brasao{
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+  .menu-lateral .marca .orgao{
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 4px;
+  }
+  .menu-lateral .marca .nome-sistema{
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .menu-lateral .marca .subtitulo{
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2px;
+  }
+  .menu-lateral nav{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 10px;
+  }
+  .item-menu{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 7px;
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+  }
+  .item-menu:hover{
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+  }
+  .item-menu.ativo{
+    background: var(--verde);
+    color: #fff;
+  }
+  .item-menu svg{
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    stroke: currentColor;
+  }
+
+    /* Barra superior: usuário logado e sair */
+  .area-conteudo{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  .barra-superior{
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    padding: 12px 36px;
+    background: #fff;
+    border-bottom: 1px solid var(--linha);
+    flex-shrink: 0;
+  }
+  .usuario-logado-topo{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto);
+  }
+  .usuario-logado-topo svg{
+    width: 16px;
+    height: 16px;
+    stroke: var(--texto-suave);
+    flex-shrink: 0;
+  }
+  .botao-sair-topo{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--linha);
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--texto);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .botao-sair-topo svg{ width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
+  .botao-sair-topo:hover{ background: var(--erro-bg, #FBECEB); border-color: var(--erro, #B3261E); color: var(--erro, #B3261E); }
+  @media (max-width: 640px){
+    .barra-superior{ padding: 10px 16px; }
+  }
+
+  /* Conteúdo principal */
+  main{
+    flex: 1;
+    padding: 32px 36px;
+    min-width: 0;
+  }
+  .cabecalho-pagina{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .cabecalho-pagina h1{
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0 0 3px;
+  }
+  .cabecalho-pagina p{
+    font-size: 13.5px;
+    color: var(--texto-suave);
+    margin: 0;
+  }
+
+  .secao{
+    margin-bottom: 28px;
+  }
+  .secao-titulo{
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+  }
+  .secao-titulo h2{
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .contagem-pill{
+    background: var(--pendente-bg);
+    color: var(--pendente);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 20px;
+  }
+  .contagem-pill.neutra{
+    background: #EAEDF0;
+    color: var(--texto-suave);
+  }
+
+  .cartao-tabela{
+    background: #fff;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th{
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--linha);
+    background: #FAFBFC;
+  }
+  tbody td{
+    padding: 14px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--linha);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody tr:hover{ background: #FAFBFC; }
+  td.email{ font-weight: 600; }
+  td.matricula{ color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+  .acoes-linha{
+    display: flex;
+    gap: 8px;
+  }
+  .botao-icone{
+    border: 1px solid var(--linha);
+    background: #fff;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 12px;
+    color: var(--texto-suave);
+    cursor: pointer;
+  }
+  .botao-icone:hover{ border-color: var(--verde); color: var(--verde); }
+  .botao-icone.aceitar{ border-color: var(--sucesso); color: var(--sucesso); }
+  .botao-icone.aceitar:hover{ background: var(--sucesso); color: #fff; }
+  .botao-icone.recusar{ border-color: var(--erro); color: var(--erro); }
+  .botao-icone.recusar:hover{ background: var(--erro); color: #fff; }
+  .botao-icone.revogar{ border-color: var(--erro); color: var(--erro); }
+  .botao-icone.revogar:hover{ background: var(--erro); color: #fff; }
+
+  .estado-vazio{
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--texto-suave);
+    font-size: 14px;
+  }
+
+  .selo-visualizar{
+    display: inline-flex;
+    align-items: center;
+    background: #EAEDF0;
+    color: var(--texto-suave);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .toggle-admin{
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-admin input{
+    width: 15px;
+    height: 15px;
+    accent-color: var(--verde);
+    cursor: pointer;
+  }
+  .toggle-admin span{
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--texto-suave);
+  }
+  .toggle-admin.marcado span{ color: var(--verde-escuro); }
+
+  .selo-master{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #EAF3EE;
+    color: var(--verde-escuro);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+  .selo-master svg{ width: 12px; height: 12px; stroke: var(--verde-escuro); }
+
+  .acesso-restrito{
+    max-width: 420px;
+    margin: 60px auto 0;
+    text-align: center;
+    background: #fff;
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    padding: 36px 30px;
+  }
+  .acesso-restrito .icone-cadeado{
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--erro-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .acesso-restrito .icone-cadeado svg{ width: 22px; height: 22px; stroke: var(--erro); }
+  .acesso-restrito h2{ font-size: 16px; margin: 0 0 8px; }
+  .acesso-restrito p{ font-size: 13.5px; color: var(--texto-suave); margin: 0; line-height: 1.5; }
+
+  .info-permissoes{
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #EEF3FF;
+    border: 1px solid #D6E2FB;
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-size: 12.5px;
+    color: #364766;
+    margin-bottom: 14px;
+  }
+  .info-permissoes svg{
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    stroke: #3E5A9C;
+  }
+
+  @media (max-width: 720px){
+    .menu-lateral{ width: 64px; }
+    .menu-lateral .marca .nome-sistema, .menu-lateral .marca .subtitulo, .menu-lateral .marca .orgao, .item-menu span{ display: none; }
+    .item-menu{ justify-content: center; }
+    main{ padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="faixa-estado"></div>
+
+  <div class="layout">
+  <aside class="menu-lateral">
+    <div class="marca">
+      <svg class="brasao" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Brasão do Estado do Rio Grande do Sul (placeholder)">
+        <circle cx="50" cy="50" r="47" fill="#FFFFFF" stroke="#00512E" stroke-width="3"/>
+        <path d="M50 3 A47 47 0 0 1 50 97 Z" fill="#B7212B" opacity="0.9"/>
+        <path d="M50 3 A47 47 0 0 0 50 97 Z" fill="#00512E" opacity="0.9"/>
+        <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
+        <text x="50" y="58" text-anchor="middle" font-family="Public Sans, sans-serif" font-weight="800" font-size="26" fill="#00512E">RS</text>
+        <circle cx="50" cy="50" r="47" fill="none" stroke="#E3A63E" stroke-width="2"/>
+      </svg>
+      <div class="nome-sistema">GestCon</div>
+      <div class="subtitulo">Sistema de Gestão</div>
+    </div>
+    <nav>
+      <a class="item-menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>
+        <span>Início</span>
+      </a>
+      <a class="item-menu" href="cadastro-empresa.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg>
+        <span>Empresas</span>
+      </a>
+      <a class="item-menu" href="contratos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h6"/><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+        <span>Contratos</span>
+      </a>
+      <a class="item-menu" href="postos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
+        <span>Postos</span>
+      </a>
+      <a class="item-menu ativo" href="usuarios.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Usuários</span>
+      </a>
+      <a class="item-menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.04z"/></svg>
+        <span>Configurações</span>
+      </a>
+    </nav>
+  </aside>
+
+  <div class="area-conteudo">
+  <header class="barra-superior">
+    <div class="usuario-logado-topo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="matricula-usuario-topo">Matrícula: —</span>
+    </div>
+    <button type="button" class="botao-sair-topo" onclick="deslogar()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Sair
+    </button>
+  </header>
+
+  <main>
+    <div id="conteudo-admin">
+      <div class="cabecalho-pagina">
+        <div>
+          <h1>Usuários</h1>
+          <p>Aprove solicitações de acesso e gerencie as permissões de cada usuário no sistema.</p>
+        </div>
+      </div>
+
+      <div class="secao">
+        <div class="secao-titulo">
+          <h2>Solicitações pendentes</h2>
+          <span class="contagem-pill" id="contagem-pendentes">0</span>
+        </div>
+        <div class="cartao-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>E-mail</th>
+                <th>Matrícula</th>
+                <th style="width:160px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-pendentes"></tbody>
+          </table>
+          <div class="estado-vazio" id="estado-vazio-pendentes" style="display:none">Nenhuma solicitação pendente no momento.</div>
+        </div>
+      </div>
+
+      <div class="secao">
+        <div class="secao-titulo">
+          <h2>Usuários com acesso</h2>
+          <span class="contagem-pill neutra" id="contagem-ativos">0</span>
+        </div>
+
+        <div class="info-permissoes">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <span>Todo usuário aprovado começa apenas com permissão de <strong>visualização</strong> em Empresas, Contratos e Postos. Marque <strong>Administrador</strong> para liberar edição nessas telas. Somente o administrador master vê e gerencia esta aba de Usuários.</span>
+        </div>
+
+        <div class="cartao-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>E-mail</th>
+                <th>Matrícula</th>
+                <th style="width:150px">Administrador</th>
+                <th style="width:90px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-ativos"></tbody>
+          </table>
+          <div class="estado-vazio" id="estado-vazio-ativos" style="display:none">Nenhum usuário com acesso ainda.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acesso-restrito" id="conteudo-restrito" style="display:none">
+      <div class="icone-cadeado">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2>Acesso restrito</h2>
+      <p>Esta área é exclusiva para administradores do sistema. Fale com um administrador se você precisa de acesso.</p>
+    </div>
+  </main>
+  </div>
+  </div>
+
+<script type="module">
+  import { supabase, obterPerfilLogado, fazerLogout } from './js/supabase.js';
+
+  // Torna a função de deslogar global para o botão "Sair" do HTML funcionar
+  window.deslogar = fazerLogout;
+
+  // Estado local
+  let usuariosPendentes = [];
+  let usuariosAtivos = [];
+  let usuarioLogado = null;
+
+  const corpoPendentes = document.getElementById('corpo-pendentes');
+  const estadoVazioPendentes = document.getElementById('estado-vazio-pendentes');
+  const contagemPendentes = document.getElementById('contagem-pendentes');
+  const corpoAtivos = document.getElementById('corpo-ativos');
+  const estadoVazioAtivos = document.getElementById('estado-vazio-ativos');
+  const contagemAtivos = document.getElementById('contagem-ativos');
+
+  async function inicializar() {
+    usuarioLogado = await obterPerfilLogado();
+
+    if (!usuarioLogado) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
+    if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
+
+    // Somente o master vê e gerencia a aba Usuários.
+    if (usuarioLogado.papel !== 'master') {
+      document.getElementById('conteudo-admin').style.display = 'none';
+      document.getElementById('conteudo-restrito').style.display = 'block';
+      const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+      if (linkUsuarios) linkUsuarios.remove();
+      return;
+    }
+
+    await carregarUsuarios();
+  }
+
+  async function carregarUsuarios() {
+    const { data: perfis, error } = await supabase.from('perfis').select('*').order('criado_em', { ascending: false });
+    if (error) {
+      console.error("Erro ao carregar usuários:", error);
+      return;
+    }
+
+    usuariosPendentes = perfis.filter(p => !p.aprovado);
+    usuariosAtivos = perfis.filter(p => p.aprovado);
+
+    renderizarPendentes();
+    renderizarAtivos();
+  }
+
+  function renderizarPendentes() {
+    corpoPendentes.innerHTML = '';
+    estadoVazioPendentes.style.display = usuariosPendentes.length ? 'none' : 'block';
+    contagemPendentes.textContent = usuariosPendentes.length;
+
+    usuariosPendentes.forEach((solicitacao) => {
+      const linha = document.createElement('tr');
+      linha.innerHTML = `
+        <td class="email">${solicitacao.email}</td>
+        <td class="matricula">${solicitacao.matricula}</td>
+        <td>
+          <div class="acoes-linha">
+            <button class="botao-icone aceitar" onclick="aceitarSolicitacao('${solicitacao.id}', '${solicitacao.email}')">Aceitar</button>
+            <button class="botao-icone recusar" onclick="recusarSolicitacao('${solicitacao.id}', '${solicitacao.email}')">Recusar</button>
+          </div>
+        </td>`;
+      corpoPendentes.appendChild(linha);
+    });
+  }
+
+  function renderizarAtivos() {
+    corpoAtivos.innerHTML = '';
+    estadoVazioAtivos.style.display = usuariosAtivos.length ? 'none' : 'block';
+    contagemAtivos.textContent = usuariosAtivos.length;
+
+    usuariosAtivos.forEach((usuario) => {
+      const linha = document.createElement('tr');
+      const travado = usuario.papel === 'master';
+      const ehAdmin = usuario.papel === 'administrador';
+
+      const celulaAdministrador = travado
+        ? `<td><span class="selo-master"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Master</span></td>`
+        : `<td>
+            <label class="toggle-admin ${ehAdmin ? 'marcado' : ''}">
+              <input type="checkbox" ${ehAdmin ? 'checked' : ''} onchange="alternarAdministrador('${usuario.id}', this.checked)">
+              <span>Administrador</span>
+            </label>
+          </td>`;
+
+      const celulaAcoes = travado
+        ? `<td><span style="color:var(--texto-suave); font-size:12.5px;">—</span></td>`
+        : `<td>
+            <div class="acoes-linha">
+              <button class="botao-icone revogar" onclick="revogarAcesso('${usuario.id}', '${usuario.email}')">Revogar</button>
+            </div>
+          </td>`;
+
+      linha.innerHTML = `
+        <td class="email">${usuario.email}</td>
+        <td class="matricula">${usuario.matricula}</td>
+        ${celulaAdministrador}
+        ${celulaAcoes}`;
+      corpoAtivos.appendChild(linha);
+    });
+  }
+
+  window.aceitarSolicitacao = async function(id, email) {
+    if (!confirm(`Aprovar o acesso de ${email}?`)) return;
+
+    const { error } = await supabase.from('perfis').update({ aprovado: true }).eq('id', id);
+    if (error) alert("Erro ao aprovar: " + error.message);
+    else await carregarUsuarios();
+  }
+
+  window.recusarSolicitacao = async function(id, email) {
+    if (!confirm(`Recusar a solicitação de ${email}? O registro será excluído.`)) return;
+
+    const { error } = await supabase.from('perfis').delete().eq('id', id);
+    if (error) alert("Erro ao recusar: " + error.message);
+    else await carregarUsuarios();
+  }
+
+  window.alternarAdministrador = async function(id, marcado) {
+    const novoPapel = marcado ? 'administrador' : 'leitor';
+    const { error } = await supabase.from('perfis').update({ papel: novoPapel }).eq('id', id);
+    if (error) {
+      alert("Erro ao alterar papel: " + error.message);
+      await carregarUsuarios(); // recarrega para voltar o toggle visual
+    } else {
+      await carregarUsuarios();
+    }
+  }
+
+  window.revogarAcesso = async function(id, email) {
+    if (!confirm(`Revogar o acesso de ${email}? O usuário não poderá mais entrar no sistema.`)) return;
+
+    // Apenas marcamos como não aprovado, o login.html irá bloquear o acesso dele.
+    const { error } = await supabase.from('perfis').update({ aprovado: false, papel: 'leitor' }).eq('id', id);
+    if (error) alert("Erro ao revogar: " + error.message);
+    else await carregarUsuarios();
+  }
+
+  // Inicia a tela
+  inicializar();
+</script>
+
+</body>
+</html>
