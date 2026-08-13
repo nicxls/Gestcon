@@ -718,7 +718,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
         <span>Postos</span>
       </a>
-      <a class="item-menu" href="usuarios.html">
+      <a class="item-menu" href="usuarios.html" style="display: none;">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span>Usuários</span>
       </a>
@@ -1055,8 +1055,10 @@
     const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
     if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
 
-    if (!usuarioEhMaster) {
-      const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+    const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+    if (usuarioEhMaster) {
+      if (linkUsuarios) linkUsuarios.style.display = '';
+    } else {
       if (linkUsuarios) linkUsuarios.remove();
     }
 
