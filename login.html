@@ -662,7 +662,7 @@
     // Verificar se o perfil foi aprovado pelo master
     const { data: perfil, error: perfilError } = await supabase
       .from('perfis')
-      .select('aprovado')
+      .select('aprovado, papel')
       .eq('id', authData.user.id)
       .single();
 
@@ -675,6 +675,9 @@
       botaoAcessar.disabled = false;
       return;
     }
+
+    // Salva o papel no sessionStorage para exibir o menu corretamente desde a primeira página
+    sessionStorage.setItem('gestcon_papel', perfil.papel);
 
     // Tudo certo, redireciona
     window.location.href = 'postos.html';
