@@ -525,6 +525,40 @@
     </div>
   </div>
 
+  <!-- Modal: Nova Senha -->
+  <div class="sobreposicao" id="sobreposicao-nova-senha">
+    <div class="modal-cartao" id="cartao-nova-senha">
+      <div id="etapa-form-nova-senha">
+        <h2>Criar nova senha</h2>
+        <p class="instrucao">Digite a sua nova senha de acesso abaixo. Ela precisa ter no mínimo 6 caracteres.</p>
+        <form id="form-nova-senha" novalidate>
+          <div class="campo">
+            <label for="campo-nova-senha">Nova Senha</label>
+            <div class="campo-entrada">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" id="campo-nova-senha" placeholder="No mínimo 6 caracteres" autocomplete="new-password">
+            </div>
+            <div class="mensagem-erro" id="erro-nova-senha">A senha deve ter pelo menos 6 caracteres.</div>
+          </div>
+          <div class="acoes-modal">
+            <button type="submit" class="botao botao-salvar">Salvar nova senha</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="etapa-sucesso-nova-senha" class="estado-confirmacao" style="display:none">
+        <div class="icone-sucesso">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2>Senha atualizada!</h2>
+        <p>Sua nova senha foi salva com sucesso. Você já pode acessar o sistema.</p>
+        <div class="acoes-modal">
+          <button type="button" class="botao botao-salvar" onclick="window.location.href='postos.html'">Entrar no sistema</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Recuperar Senha -->
   <div class="sobreposicao" id="sobreposicao-recuperar">
     <div class="modal-cartao" id="cartao-recuperar">
@@ -805,23 +839,54 @@
     etapaSucessoRecuperar.style.display = 'block';
   });
 
-  // Listener para identificar quando a pessoa clica no link do e-mail de recuperação
-  // O Supabase joga um hash na URL tipo #access_token=...&type=recovery
+  // ==========================================
+  // LÓGICA DE DEFINIR NOVA SENHA
+  // ==========================================
+  const sobreposicaoNovaSenha = document.getElementById('sobreposicao-nova-senha');
+  const etapaFormNovaSenha = document.getElementById('etapa-form-nova-senha');
+  const etapaSucessoNovaSenha = document.getElementById('etapa-sucesso-nova-senha');
+  const formNovaSenha = document.getElementById('form-nova-senha');
+  const campoNovaSenha = document.getElementById('campo-nova-senha');
+  const erroNovaSenha = document.getElementById('erro-nova-senha');
+
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
-      const novaSenha = prompt('Crie sua nova senha (mínimo 6 caracteres):');
-      if (novaSenha && novaSenha.length >= 6) {
-        const { error } = await supabase.auth.updateUser({ password: novaSenha });
-        if (error) {
-          alert('Erro ao redefinir a senha: ' + error.message);
-        } else {
-          alert('Senha alterada com sucesso! Você já pode acessar o sistema.');
-          window.location.href = 'postos.html';
-        }
-      } else {
-        alert('Senha inválida. Você precisa redefinir sua senha novamente.');
-      }
+      etapaFormNovaSenha.style.display = 'block';
+      etapaSucessoNovaSenha.style.display = 'none';
+      sobreposicaoNovaSenha.classList.add('aberta');
+      campoNovaSenha.focus();
     }
+  });
+
+  formNovaSenha.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    campoNovaSenha.classList.remove('invalido');
+    erroNovaSenha.classList.remove('visivel');
+
+    const novaSenha = campoNovaSenha.value;
+
+    if (!novaSenha || novaSenha.length < 6) {
+      campoNovaSenha.classList.add('invalido');
+      erroNovaSenha.classList.add('visivel');
+      return;
+    }
+
+    const botaoSalvar = formNovaSenha.querySelector('.botao-salvar');
+    const textoBotaoOriginal = botaoSalvar.textContent;
+    botaoSalvar.textContent = 'Salvando...';
+    botaoSalvar.disabled = true;
+
+    const { error } = await supabase.auth.updateUser({ password: novaSenha });
+    
+    if (error) {
+      alert('Erro ao redefinir a senha: ' + error.message);
+      botaoSalvar.textContent = textoBotaoOriginal;
+      botaoSalvar.disabled = false;
+      return;
+    }
+
+    etapaFormNovaSenha.style.display = 'none';
+    etapaSucessoNovaSenha.style.display = 'block';
   });
 
 </script>
