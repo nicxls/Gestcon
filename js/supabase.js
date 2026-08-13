@@ -6,8 +6,8 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 // 🔴 ATENÇÃO: COLOQUE AQUI AS SUAS CHAVES DO SUPABASE 🔴
-const supabaseUrl = 'COLE_AQUI_A_SUA_PROJECT_URL';
-const supabaseKey = 'COLE_AQUI_A_SUA_PUBLISHABLE_API_KEY';
+const supabaseUrl = 'https://rxqsuxllliwyyehcmnvh.supabase.co';
+const supabaseKey = 'sb_publishable_2gDj_6d0eT7hYc8wtTsggg_guuTwWCz';
 
 // Criação do cliente para uso nas outras telas
 export const supabase = createClient(supabaseUrl, supabaseKey);
@@ -38,12 +38,12 @@ export async function obterPerfilLogado() {
         .select('*')
         .eq('id', sessao.user.id)
         .single();
-        
+
     if (error) {
         console.error("Erro ao buscar perfil:", error);
         return null;
     }
-    
+
     return perfil;
 }
 
