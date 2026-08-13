@@ -430,12 +430,12 @@
 
         <form id="form-login" novalidate>
           <div class="campo">
-            <label for="usuario">Usuário</label>
+            <label for="usuario">E-mail</label>
             <div class="campo-entrada">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <input type="text" id="usuario" name="usuario" placeholder="CPF, matrícula ou nome de usuário" autocomplete="username">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+              <input type="email" id="usuario" name="usuario" placeholder="nome@orgao.rs.gov.br" autocomplete="username">
             </div>
-            <div class="mensagem-erro" id="erro-login-usuario">Informe seu usuário ou matrícula.</div>
+            <div class="mensagem-erro" id="erro-login-usuario">Informe um e-mail válido.</div>
           </div>
 
           <div class="campo">
@@ -449,7 +449,7 @@
 
           <div class="linha-opcoes">
             <label><input type="checkbox" name="manter"> Manter conectado</label>
-            <a href="#" onclick="alert('Como o login é feito pela sua Matrícula, a redefinição de senha deve ser solicitada diretamente ao Administrador do Sistema do seu setor.'); return false;">Esqueci minha senha</a>
+            <a href="#" onclick="abrirModalRecuperarSenha(); return false;">Esqueci minha senha</a>
           </div>
 
           <button type="submit" class="botao-acessar">Acessar o sistema</button>
@@ -525,8 +525,46 @@
     </div>
   </div>
 
+  <!-- Modal: Recuperar Senha -->
+  <div class="sobreposicao" id="sobreposicao-recuperar">
+    <div class="modal-cartao" id="cartao-recuperar">
+      
+      <div id="etapa-form-recuperar">
+        <h2>Recuperar senha</h2>
+        <p class="instrucao">Informe o e-mail cadastrado e enviaremos um link para você criar uma nova senha.</p>
+        
+        <form id="form-recuperar" novalidate>
+          <div class="campo">
+            <label for="recuperar-email">E-mail</label>
+            <div class="campo-entrada">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+              <input type="email" id="recuperar-email" placeholder="nome@orgao.rs.gov.br" autocomplete="email">
+            </div>
+            <div class="mensagem-erro" id="erro-recuperar-email">Informe um e-mail válido.</div>
+          </div>
+          <div class="acoes-modal">
+            <button type="button" class="botao botao-cancelar" onclick="fecharModalRecuperar()">Cancelar</button>
+            <button type="submit" class="botao botao-salvar">Enviar link</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="etapa-sucesso-recuperar" class="estado-confirmacao" style="display:none">
+        <div class="icone-sucesso">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2>Link enviado!</h2>
+        <p>Verifique a sua caixa de entrada e a pasta de spam. Enviamos um link para você redefinir sua senha.</p>
+        <div class="acoes-modal">
+          <button type="button" class="botao botao-salvar" onclick="fecharModalRecuperar()">Fechar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 <script type="module">
-  import { supabase, gerarEmailDaMatricula } from './js/supabase.js';
+  import { supabase } from './js/supabase.js';
 
   // ==========================================
   // LÓGICA DE LOGIN
@@ -536,6 +574,10 @@
   const campoSenhaLogin = document.getElementById('senha');
   const erroUsuarioLogin = document.getElementById('erro-login-usuario');
   const textoOriginalErroUsuario = erroUsuarioLogin.textContent;
+
+  function emailValido(valor) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor.trim());
+  }
 
   formLogin.addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -547,7 +589,7 @@
     erroUsuarioLogin.textContent = textoOriginalErroUsuario;
 
     let valido = true;
-    if (!campoUsuarioLogin.value.trim()) {
+    if (!emailValido(campoUsuarioLogin.value)) {
       campoUsuarioLogin.classList.add('invalido');
       erroUsuarioLogin.classList.add('visivel');
       valido = false;
@@ -565,19 +607,18 @@
     botaoAcessar.textContent = 'Autenticando...';
     botaoAcessar.disabled = true;
 
-    const matricula = campoUsuarioLogin.value.trim();
-    const emailGerado = gerarEmailDaMatricula(matricula);
+    const emailDigitado = campoUsuarioLogin.value.trim();
 
     // Tentativa de login no Supabase
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: emailGerado,
+      email: emailDigitado,
       password: campoSenhaLogin.value
     });
 
     if (authError) {
       campoUsuarioLogin.classList.add('invalido');
       campoSenhaLogin.classList.add('invalido');
-      erroUsuarioLogin.textContent = 'Matrícula ou senha incorretos.';
+      erroUsuarioLogin.textContent = 'E-mail ou senha incorretos.';
       erroUsuarioLogin.classList.add('visivel');
       botaoAcessar.textContent = textoBotaoOriginal;
       botaoAcessar.disabled = false;
@@ -636,9 +677,7 @@
     });
   }
 
-  function emailValido(valor) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor.trim());
-  }
+
 
   formSolicitar.addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -665,16 +704,15 @@
 
     const matricula = campoMatriculaSolicitar.value.trim();
     const emailReal = campoEmailSolicitar.value.trim();
-    const emailGeradoParaLogin = gerarEmailDaMatricula(matricula);
-
+    
     const botaoSalvar = formSolicitar.querySelector('.botao-salvar');
     const textoBotaoOriginal = botaoSalvar.textContent;
     botaoSalvar.textContent = 'Enviando...';
     botaoSalvar.disabled = true;
 
-    // 1. Criar o usuário no Auth (usando o email gerado da matrícula para o login)
+    // 1. Criar o usuário no Auth usando o E-mail real
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: emailGeradoParaLogin,
+      email: emailReal,
       password: campoSenhaSolicitar.value
     });
 
@@ -708,7 +746,84 @@
     etapaFormulario.style.display = 'none';
     etapaConfirmacao.style.display = 'block';
   });
-</script>
 
+  // ==========================================
+  // LÓGICA DE RECUPERAR SENHA
+  // ==========================================
+  const sobreposicaoRecuperar = document.getElementById('sobreposicao-recuperar');
+  const etapaFormRecuperar = document.getElementById('etapa-form-recuperar');
+  const etapaSucessoRecuperar = document.getElementById('etapa-sucesso-recuperar');
+  const formRecuperar = document.getElementById('form-recuperar');
+  const campoEmailRecuperar = document.getElementById('recuperar-email');
+  const erroRecuperarEmail = document.getElementById('erro-recuperar-email');
+
+  window.abrirModalRecuperarSenha = function() {
+    formRecuperar.reset();
+    campoEmailRecuperar.classList.remove('invalido');
+    erroRecuperarEmail.classList.remove('visivel');
+    
+    etapaFormRecuperar.style.display = 'block';
+    etapaSucessoRecuperar.style.display = 'none';
+    sobreposicaoRecuperar.classList.add('aberta');
+    campoEmailRecuperar.focus();
+  }
+
+  window.fecharModalRecuperar = function() {
+    sobreposicaoRecuperar.classList.remove('aberta');
+  }
+
+  formRecuperar.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    campoEmailRecuperar.classList.remove('invalido');
+    erroRecuperarEmail.classList.remove('visivel');
+
+    if (!emailValido(campoEmailRecuperar.value)) {
+      campoEmailRecuperar.classList.add('invalido');
+      erroRecuperarEmail.classList.add('visivel');
+      return;
+    }
+
+    const emailParaRecuperar = campoEmailRecuperar.value.trim();
+    
+    const botaoEnviar = formRecuperar.querySelector('.botao-salvar');
+    const textoBotaoOriginal = botaoEnviar.textContent;
+    botaoEnviar.textContent = 'Enviando...';
+    botaoEnviar.disabled = true;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(emailParaRecuperar, {
+      redirectTo: window.location.origin + '/login.html', // Redireciona para o próprio login (onde o Supabase irá ler o token)
+    });
+
+    if (error) {
+      alert("Erro ao enviar e-mail de recuperação: " + error.message);
+      botaoEnviar.textContent = textoBotaoOriginal;
+      botaoEnviar.disabled = false;
+      return;
+    }
+
+    etapaFormRecuperar.style.display = 'none';
+    etapaSucessoRecuperar.style.display = 'block';
+  });
+
+  // Listener para identificar quando a pessoa clica no link do e-mail de recuperação
+  // O Supabase joga um hash na URL tipo #access_token=...&type=recovery
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      const novaSenha = prompt('Crie sua nova senha (mínimo 6 caracteres):');
+      if (novaSenha && novaSenha.length >= 6) {
+        const { error } = await supabase.auth.updateUser({ password: novaSenha });
+        if (error) {
+          alert('Erro ao redefinir a senha: ' + error.message);
+        } else {
+          alert('Senha alterada com sucesso! Você já pode acessar o sistema.');
+          window.location.href = 'postos.html';
+        }
+      } else {
+        alert('Senha inválida. Você precisa redefinir sua senha novamente.');
+      }
+    }
+  });
+
+</script>
 </body>
 </html>

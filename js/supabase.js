@@ -16,10 +16,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // Funções Auxiliares de Autenticação e Sessão
 // ==========================================
 
-// Transforma a matrícula num "e-mail falso" para o Supabase Auth aceitar
-export function gerarEmailDaMatricula(matricula) {
-    return `${matricula}@gestcon.com.br`;
-}
 
 // Verifica se existe um usuário logado no momento
 export async function obterSessaoAtual() {
