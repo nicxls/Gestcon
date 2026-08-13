@@ -864,65 +864,23 @@
     </div>
   </div>
 
-<script>
-  // ==========================================================================
-  // Ponto de integração: em produção, o usuário logado e suas permissões vêm
-  // da sessão autenticada no backend. Aqui simulamos um "banco" de usuários
-  // compartilhado (localStorage) para que a permissão definida na aba
-  // Usuários valha de verdade nas demais telas do sistema.
-  // ==========================================================================
-  const MATRICULA_ADMIN_MASTER = '487741101';
+<script type="module">
+  import { supabase, obterPerfilLogado, fazerLogout } from './js/supabase.js';
 
-  function carregarBancoUsuarios() {
-    const banco = JSON.parse(localStorage.getItem('gestconBanco') || 'null');
-    if (banco) return banco;
-    const bancoInicial = {
-      pendentes: [],
-      ativos: [
-        { email: 'administrador do sistema', matricula: MATRICULA_ADMIN_MASTER, administrador: true, master: true }
-      ]
-    };
-    localStorage.setItem('gestconBanco', JSON.stringify(bancoInicial));
-    return bancoInicial;
-  }
+  window.deslogar = fazerLogout;
 
-  const bancoUsuarios = carregarBancoUsuarios();
-  const sessaoSalva = JSON.parse(sessionStorage.getItem('gestconUsuario') || 'null');
-  const matriculaLogada = sessaoSalva ? sessaoSalva.matricula : MATRICULA_ADMIN_MASTER;
-  const usuarioLogado = bancoUsuarios.ativos.find(u => u.matricula === matriculaLogada)
-    || { matricula: matriculaLogada, administrador: false, master: false };
+  let usuarioLogado = null;
+  let usuarioEhAdministrador = false;
+  let usuarioEhMaster = false;
 
-  // Administrador: permissão de edição em Empresas, Contratos e Postos.
-  const usuarioEhAdministrador = !!usuarioLogado.administrador;
-  // Master: único perfil que acessa a aba Usuários (aprova solicitações e concede/revoga administrador).
-  const usuarioEhMaster = !!usuarioLogado.master;
-
-  // Exibe a matrícula do usuário logado na barra superior e habilita o botão "Sair"
-  const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
-  if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
-
-  function deslogar() {
-    sessionStorage.removeItem('gestconUsuario');
-    window.location.href = 'login.html';
-  }
-  if (!usuarioEhMaster) {
-    const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
-    if (linkUsuarios) linkUsuarios.remove();
-  }
-  if (!usuarioEhAdministrador) {
-    const botaoCadastrarContrato = document.getElementById('botao-cadastrar-contrato');
-    if (botaoCadastrarContrato) botaoCadastrarContrato.style.display = 'none';
-  }
-
-  // Mesma base de empresas cadastradas na tela de Empresas
-  const empresasCadastradas = [];
-
+  let empresasCadastradas = []; // { id, nome }
   let contratos = [];
-  let indiceEmEdicao = null;
+  let idEmEdicao = null;
 
   const rotulosSituacao = { ativo: 'Ativo', encerrado: 'Encerrado', rescindido: 'Rescindido' };
   const rotulosContaVinculada = { sim: 'Sim', nao: 'Não' };
   const rotulosMotivoDispensa = { emergencial: 'Emergencial', remanescente: 'Remanescente' };
+  const rotulosServico = { Limpeza: 'Limpeza', Merendeiras: 'Merendeiras', 'Vigilância': 'Vigilância', Porteiros: 'Porteiros' };
 
   const corpoTabela = document.getElementById('corpo-tabela');
   const estadoVazio = document.getElementById('estado-vazio');
@@ -950,16 +908,6 @@
   const campoVigenciaInicio = document.getElementById('vigencia-inicio');
   const campoVigenciaFim = document.getElementById('vigencia-fim');
 
-  // Popula o select de Empresa com as empresas já cadastradas
-  empresasCadastradas.forEach(nomeEmpresa => {
-    const opcao = document.createElement('option');
-    opcao.value = nomeEmpresa;
-    opcao.textContent = nomeEmpresa;
-    campoEmpresa.appendChild(opcao);
-  });
-
-  const rotulosServico = { Limpeza: 'Limpeza', Merendeiras: 'Merendeiras', 'Vigilância': 'Vigilância', Porteiros: 'Porteiros' };
-
   // Filtros
   const filtroCre = document.getElementById('filtro-cre');
   const filtroLote = document.getElementById('filtro-lote');
@@ -967,6 +915,69 @@
   const filtroServico = document.getElementById('filtro-servico');
   const filtroTipo = document.getElementById('filtro-tipo');
   const botaoLimparFiltros = document.getElementById('botao-limpar-filtros');
+
+  async function inicializar() {
+    usuarioLogado = await obterPerfilLogado();
+    if (!usuarioLogado || !usuarioLogado.aprovado) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    usuarioEhAdministrador = usuarioLogado.papel === 'administrador' || usuarioLogado.papel === 'master';
+    usuarioEhMaster = usuarioLogado.papel === 'master';
+
+    const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
+    if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
+
+    if (!usuarioEhMaster) {
+      const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+      if (linkUsuarios) linkUsuarios.remove();
+    }
+    if (!usuarioEhAdministrador) {
+      const botaoCadastrarContrato = document.getElementById('botao-cadastrar-contrato');
+      if (botaoCadastrarContrato) botaoCadastrarContrato.style.display = 'none';
+    }
+
+    await carregarEmpresas();
+    await carregarContratos();
+  }
+
+  async function carregarEmpresas() {
+    const { data, error } = await supabase.from('empresas').select('id, nome').order('nome', { ascending: true });
+    if (error) {
+      console.error("Erro ao carregar empresas:", error);
+      return;
+    }
+    empresasCadastradas = data;
+    
+    // Popula o select de Empresa no formulário
+    campoEmpresa.innerHTML = '<option value="">Selecione...</option>';
+    empresasCadastradas.forEach(empresa => {
+      const opcao = document.createElement('option');
+      opcao.value = empresa.id;
+      opcao.textContent = empresa.nome;
+      campoEmpresa.appendChild(opcao);
+    });
+  }
+
+  async function carregarContratos() {
+    const { data, error } = await supabase
+      .from('contratos')
+      .select('*, empresas(nome)')
+      .order('criado_em', { ascending: false });
+
+    if (error) {
+      console.error("Erro ao carregar contratos:", error);
+      return;
+    }
+    
+    contratos = data.map(c => ({
+      ...c,
+      empresa_nome: c.empresas?.nome || 'Desconhecida'
+    }));
+
+    renderizarTabela();
+  }
 
   function popularFiltro(select, valores, manterSelecao) {
     const selecionado = manterSelecao ? select.value : '';
@@ -998,7 +1009,7 @@
   function atualizarOpcoesFiltro() {
     popularDatalist(document.getElementById('lista-cre'), valoresUnicos('cre'));
     popularDatalist(document.getElementById('lista-lote'), valoresUnicos('lote'));
-    popularDatalist(document.getElementById('lista-empresa'), empresasCadastradas.slice().sort((a, b) => a.localeCompare(b, 'pt-BR')));
+    popularDatalist(document.getElementById('lista-empresa'), empresasCadastradas.map(e => e.nome).sort((a, b) => a.localeCompare(b, 'pt-BR')));
     popularFiltro(filtroServico, Object.keys(rotulosServico), true);
   }
 
@@ -1011,18 +1022,14 @@
     return contratos.filter(c =>
       contemTexto(c.cre, filtroCre.value) &&
       contemTexto(c.lote, filtroLote.value) &&
-      contemTexto(c.empresa, filtroEmpresa.value) &&
+      contemTexto(c.empresa_nome, filtroEmpresa.value) &&
       (!filtroServico.value || c.servico === filtroServico.value) &&
-      (!filtroTipo.value || c.tipo === filtroTipo.value)
+      (!filtroTipo.value || c.tipo_contrato === filtroTipo.value)
     );
   }
 
-  [filtroServico, filtroTipo].forEach(select => {
-    select.addEventListener('change', renderizarTabela);
-  });
-  [filtroCre, filtroLote, filtroEmpresa].forEach(input => {
-    input.addEventListener('input', renderizarTabela);
-  });
+  [filtroServico, filtroTipo].forEach(select => select.addEventListener('change', renderizarTabela));
+  [filtroCre, filtroLote, filtroEmpresa].forEach(input => input.addEventListener('input', renderizarTabela));
 
   botaoLimparFiltros.addEventListener('click', () => {
     filtroCre.value = '';
@@ -1033,11 +1040,11 @@
     renderizarTabela();
   });
 
-  function formatarMoeda(centavos) {
-    return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  function formatarMoeda(valor) {
+    if (!valor) return 'R$ 0,00';
+    return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
-  // Converte 'AAAA-MM-DD' (valor de <input type="date">) para 'DD/MM/AAAA'
   function formatarDataBr(dataIso) {
     if (!dataIso) return '';
     const [ano, mes, dia] = dataIso.split('-');
@@ -1049,15 +1056,12 @@
     return `${formatarDataBr(inicioIso)} a ${formatarDataBr(fimIso)}`;
   }
 
-  // Máscara de moeda: cada dígito digitado empurra os centavos
   campoValorMensal.addEventListener('input', () => {
     let digitos = campoValorMensal.value.replace(/\D/g, '');
     if (!digitos) { campoValorMensal.value = ''; return; }
-    campoValorMensal.value = formatarMoeda(parseInt(digitos, 10));
+    campoValorMensal.value = formatarMoeda(digitos / 100);
   });
 
-  // Alterna a exibição do campo "Motivo da Dispensa" (Tipo de Contrato) e do
-  // campo "Processo da Contratação Anterior" (apenas quando o motivo for Remanescente)
   function atualizarVisibilidadeProcessoAnterior() {
     const ehDispensa = campoTipo.value === 'dispensa';
     const ehRemanescente = ehDispensa && campoMotivo.value === 'remanescente';
@@ -1090,27 +1094,28 @@
     estadoVazio.textContent = contratos.length
       ? 'Nenhum contrato encontrado para os filtros selecionados.'
       : 'Nenhum contrato cadastrado ainda.';
+      
     listaFiltrada.forEach((contrato) => {
-      const indice = contratos.indexOf(contrato);
       const linha = document.createElement('tr');
-      const seloTipo = contrato.tipo === 'dispensa'
+      const seloTipo = contrato.tipo_contrato === 'dispensa'
         ? '<span class="selo-tipo dispensa">Dispensa de Licitação</span>'
         : '<span class="selo-tipo licitacao">Licitação</span>';
       const seloSituacao = `<span class="selo-situacao ${contrato.situacao}">${rotulosSituacao[contrato.situacao] || ''}</span>`;
+      
       linha.innerHTML = `
-        <td class="numero">${contrato.numeroContrato}</td>
+        <td class="numero">${contrato.numero_contrato}</td>
         <td>${seloTipo}</td>
         <td>${seloSituacao}</td>
-        <td>${contrato.empresa}</td>
+        <td>${contrato.empresa_nome}</td>
         <td>${contrato.servico}</td>
         <td class="suave">${contrato.cre}</td>
-        <td class="suave">${contrato.lote}</td>
-        <td>${formatarMoeda(contrato.valorMensalCentavos)}</td>
+        <td class="suave">${contrato.lote || '—'}</td>
+        <td>${formatarMoeda(contrato.valor_mensal)}</td>
         <td>
           <div class="acoes-linha">
-            <button class="botao-icone" onclick="visualizarContrato(${indice})">Visualizar</button>
-            ${usuarioEhAdministrador ? `<button class="botao-icone" onclick="editarContrato(${indice})">Editar</button>
-            <button class="botao-icone" onclick="excluirContrato(${indice})">Excluir</button>` : ''}
+            <button class="botao-icone" onclick="visualizarContrato('${contrato.id}')">Visualizar</button>
+            ${usuarioEhAdministrador ? `<button class="botao-icone" onclick="editarContrato('${contrato.id}')">Editar</button>
+            <button class="botao-icone" onclick="excluirContrato('${contrato.id}')">Excluir</button>` : ''}
           </div>
         </td>`;
       corpoTabela.appendChild(linha);
@@ -1118,69 +1123,74 @@
   }
 
   function preencherFormulario(contrato) {
-    campoTipo.value = contrato.tipo;
+    campoTipo.value = contrato.tipo_contrato;
     campoSituacao.value = contrato.situacao || '';
-    const ehDispensa = contrato.tipo === 'dispensa';
+    const ehDispensa = contrato.tipo_contrato === 'dispensa';
     campoMotivoWrapper.classList.toggle('visivel-condicional', ehDispensa);
-    campoMotivo.value = contrato.motivoDispensa || '';
-    campoProcessoAnterior.value = contrato.processoContratacaoAnterior || '';
+    campoMotivo.value = contrato.motivo_dispensa || '';
+    campoProcessoAnterior.value = contrato.processo_contratacao_anterior || '';
     atualizarVisibilidadeProcessoAnterior();
     campoLei.value = contrato.lei || '';
-    campoContaVinculada.value = contrato.contaVinculada || '';
-    campoProcessoLicitacao.value = contrato.processoLicitacao || '';
+    campoContaVinculada.value = contrato.conta_vinculada || '';
+    campoProcessoLicitacao.value = contrato.processo_licitacao || '';
     campoEdital.value = contrato.edital || '';
-    campoProcessoContratacao.value = contrato.processoContratacao || '';
-    campoEmpresa.value = contrato.empresa || '';
+    campoProcessoContratacao.value = contrato.processo_contratacao || '';
+    campoEmpresa.value = contrato.empresa_id || '';
     campoServico.value = contrato.servico || '';
-    campoNumeroContrato.value = contrato.numeroContrato || '';
-    campoQuantidadePostos.value = contrato.quantidadePostos || '';
+    campoNumeroContrato.value = contrato.numero_contrato || '';
+    campoQuantidadePostos.value = contrato.quantidade_postos || '';
     campoCre.value = contrato.cre || '';
-    campoValorMensal.value = formatarMoeda(contrato.valorMensalCentavos || 0);
-    campoVigenciaInicio.value = contrato.vigenciaInicio || '';
-    campoVigenciaFim.value = contrato.vigenciaFim || '';
+    campoValorMensal.value = formatarMoeda(contrato.valor_mensal || 0);
+    campoVigenciaInicio.value = contrato.vigencia_inicio || '';
+    campoVigenciaFim.value = contrato.vigencia_fim || '';
   }
 
-  function editarContrato(indice) {
+  window.editarContrato = function(id) {
     if (!usuarioEhAdministrador) return;
-    indiceEmEdicao = indice;
+    idEmEdicao = id;
     limparErros();
     document.getElementById('titulo-modal').textContent = 'Editar Contrato';
     document.getElementById('botao-salvar').textContent = 'Salvar Alterações';
-    preencherFormulario(contratos[indice]);
+    const contrato = contratos.find(c => c.id === id);
+    preencherFormulario(contrato);
     sobreposicao.classList.add('aberta');
   }
 
-  function excluirContrato(indice) {
+  window.excluirContrato = async function(id) {
     if (!usuarioEhAdministrador) return;
-    contratos.splice(indice, 1);
-    renderizarTabela();
+    if (!confirm("Tem certeza que deseja excluir este contrato? Os postos vinculados também serão excluídos.")) return;
+    
+    const { error } = await supabase.from('contratos').delete().eq('id', id);
+    if (error) alert("Erro ao excluir: " + error.message);
+    else await carregarContratos();
   }
 
-  function visualizarContrato(indice) {
-    const contrato = contratos[indice];
-    document.getElementById('visualizar-numero-contrato').textContent = contrato.numeroContrato || '—';
-    document.getElementById('visualizar-tipo').textContent = contrato.tipo === 'dispensa' ? 'Dispensa de Licitação' : 'Licitação';
+  window.visualizarContrato = function(id) {
+    const contrato = contratos.find(c => c.id === id);
+    document.getElementById('visualizar-numero-contrato').textContent = contrato.numero_contrato || '—';
+    document.getElementById('visualizar-tipo').textContent = contrato.tipo_contrato === 'dispensa' ? 'Dispensa de Licitação' : 'Licitação';
     document.getElementById('visualizar-situacao').textContent = rotulosSituacao[contrato.situacao] || '—';
     document.getElementById('visualizar-lei').textContent = contrato.lei || '—';
-    document.getElementById('visualizar-conta-vinculada').textContent = rotulosContaVinculada[contrato.contaVinculada] || '—';
-    document.getElementById('visualizar-empresa').textContent = contrato.empresa || '—';
+    document.getElementById('visualizar-conta-vinculada').textContent = rotulosContaVinculada[contrato.conta_vinculada] || '—';
+    document.getElementById('visualizar-empresa').textContent = contrato.empresa_nome || '—';
     document.getElementById('visualizar-servico').textContent = contrato.servico || '—';
-    document.getElementById('visualizar-quantidade-postos').textContent = contrato.quantidadePostos ?? '—';
+    document.getElementById('visualizar-quantidade-postos').textContent = contrato.quantidade_postos ?? '—';
     document.getElementById('visualizar-cre').textContent = contrato.cre || '—';
     document.getElementById('visualizar-lote').textContent = contrato.lote || '—';
-    document.getElementById('visualizar-processo-licitacao').textContent = contrato.processoLicitacao || '—';
+    document.getElementById('visualizar-processo-licitacao').textContent = contrato.processo_licitacao || '—';
     document.getElementById('visualizar-edital').textContent = contrato.edital || '—';
-    document.getElementById('visualizar-processo-contratacao').textContent = contrato.processoContratacao || '—';
-    document.getElementById('visualizar-valor-mensal').textContent = formatarMoeda(contrato.valorMensalCentavos || 0);
-    document.getElementById('visualizar-vigencia').textContent = formatarVigencia(contrato.vigenciaInicio, contrato.vigenciaFim) || '—';
+    document.getElementById('visualizar-processo-contratacao').textContent = contrato.processo_contratacao || '—';
+    document.getElementById('visualizar-valor-mensal').textContent = formatarMoeda(contrato.valor_mensal || 0);
+    document.getElementById('visualizar-vigencia').textContent = formatarVigencia(contrato.vigencia_inicio, contrato.vigencia_fim) || '—';
 
     const blocoMotivo = document.getElementById('bloco-visualizar-motivo');
     const blocoProcessoAnterior = document.getElementById('bloco-visualizar-processo-anterior');
-    if (contrato.tipo === 'dispensa') {
-      document.getElementById('visualizar-motivo').textContent = rotulosMotivoDispensa[contrato.motivoDispensa] || '—';
+    
+    if (contrato.tipo_contrato === 'dispensa') {
+      document.getElementById('visualizar-motivo').textContent = rotulosMotivoDispensa[contrato.motivo_dispensa] || '—';
       blocoMotivo.style.display = '';
-      if (contrato.motivoDispensa === 'remanescente') {
-        document.getElementById('visualizar-processo-anterior').textContent = contrato.processoContratacaoAnterior || '—';
+      if (contrato.motivo_dispensa === 'remanescente') {
+        document.getElementById('visualizar-processo-anterior').textContent = contrato.processo_contratacao_anterior || '—';
         blocoProcessoAnterior.style.display = '';
       } else {
         blocoProcessoAnterior.style.display = 'none';
@@ -1193,13 +1203,13 @@
     sobreposicaoVisualizar.classList.add('aberta');
   }
 
-  function fecharModalVisualizar() {
+  window.fecharModalVisualizar = function() {
     sobreposicaoVisualizar.classList.remove('aberta');
   }
 
-  function abrirModal() {
+  window.abrirModal = function() {
     if (!usuarioEhAdministrador) return;
-    indiceEmEdicao = null;
+    idEmEdicao = null;
     form.reset();
     limparErros();
     campoMotivoWrapper.classList.remove('visivel-condicional');
@@ -1209,7 +1219,7 @@
     sobreposicao.classList.add('aberta');
   }
 
-  function fecharModal() {
+  window.fecharModal = function() {
     sobreposicao.classList.remove('aberta');
   }
 
@@ -1223,7 +1233,7 @@
     document.getElementById(idErro).classList.add('visivel');
   }
 
-  form.addEventListener('submit', (evento) => {
+  form.addEventListener('submit', async (evento) => {
     evento.preventDefault();
     limparErros();
     let valido = true;
@@ -1250,61 +1260,75 @@
 
     if (!valido) return;
 
-    // Ponto de integração: chamar o backend para persistir o contrato antes de atualizar a lista
+    const botaoSalvar = document.getElementById('botao-salvar');
+    const textoOriginal = botaoSalvar.textContent;
+    botaoSalvar.textContent = 'Salvando...';
+    botaoSalvar.disabled = true;
+
     const dados = {
-      tipo: campoTipo.value,
+      tipo_contrato: campoTipo.value,
       situacao: campoSituacao.value,
-      motivoDispensa: ehDispensa ? campoMotivo.value : '',
-      processoContratacaoAnterior: ehRemanescente ? campoProcessoAnterior.value.trim() : '',
+      motivo_dispensa: ehDispensa ? campoMotivo.value : null,
+      processo_contratacao_anterior: ehRemanescente ? campoProcessoAnterior.value.trim() : null,
       lei: campoLei.value,
-      contaVinculada: campoContaVinculada.value,
-      processoLicitacao: campoProcessoLicitacao.value.trim(),
+      conta_vinculada: campoContaVinculada.value,
+      processo_licitacao: campoProcessoLicitacao.value.trim(),
       edital: campoEdital.value.trim(),
-      processoContratacao: campoProcessoContratacao.value.trim(),
-      empresa: campoEmpresa.value,
+      processo_contratacao: campoProcessoContratacao.value.trim(),
+      empresa_id: campoEmpresa.value, // UUID
       servico: campoServico.value,
-      numeroContrato: campoNumeroContrato.value.trim(),
-      quantidadePostos: parseInt(campoQuantidadePostos.value, 10),
+      numero_contrato: campoNumeroContrato.value.trim(),
+      quantidade_postos: parseInt(campoQuantidadePostos.value, 10),
       cre: campoCre.value.trim(),
-      lote: '',
-      valorMensalCentavos: parseInt(campoValorMensal.value.replace(/\D/g, ''), 10),
-      vigenciaInicio: campoVigenciaInicio.value,
-      vigenciaFim: campoVigenciaFim.value
+      valor_mensal: parseFloat(campoValorMensal.value.replace(/\D/g, '')) / 100, // armazena numeric no BD
+      vigencia_inicio: campoVigenciaInicio.value,
+      vigencia_fim: campoVigenciaFim.value
     };
 
-    if (indiceEmEdicao !== null) {
-      contratos[indiceEmEdicao] = dados;
+    let error = null;
+    if (idEmEdicao !== null) {
+      const res = await supabase.from('contratos').update(dados).eq('id', idEmEdicao);
+      error = res.error;
     } else {
-      contratos.push(dados);
+      const res = await supabase.from('contratos').insert([dados]);
+      error = res.error;
     }
-    renderizarTabela();
-    fecharModal();
+
+    if (error) {
+      alert("Erro ao salvar contrato: " + error.message);
+    } else {
+      await carregarContratos();
+      fecharModal();
+    }
+
+    botaoSalvar.textContent = textoOriginal;
+    botaoSalvar.disabled = false;
   });
 
   // ---------- Exportação ----------
   function dadosParaExportacao(lista) {
     return lista.map(c => ({
-      'Número do Contrato': c.numeroContrato || '',
-      'Tipo de Contrato': c.tipo === 'dispensa' ? 'Dispensa de Licitação' : 'Licitação',
+      'Número do Contrato': c.numero_contrato || '',
+      'Tipo de Contrato': c.tipo_contrato === 'dispensa' ? 'Dispensa de Licitação' : 'Licitação',
       'Situação': rotulosSituacao[c.situacao] || '',
       'Lei': c.lei || '',
-      'Conta Vinculada': rotulosContaVinculada[c.contaVinculada] || '',
-      'Empresa': c.empresa || '',
+      'Conta Vinculada': rotulosContaVinculada[c.conta_vinculada] || '',
+      'Empresa': c.empresa_nome || '',
       'Serviço': c.servico || '',
-      'Quantidade de Postos': c.quantidadePostos ?? '',
+      'Quantidade de Postos': c.quantidade_postos ?? '',
       'CRE': c.cre || '',
       'Lote': c.lote || '',
-      'Processo de Licitação': c.processoLicitacao || '',
+      'Processo de Licitação': c.processo_licitacao || '',
       'Edital': c.edital || '',
-      'Processo de Contratação': c.processoContratacao || '',
-      'Valor Mensal do Contrato': formatarMoeda(c.valorMensalCentavos || 0),
-      'Vigência do Contrato': formatarVigencia(c.vigenciaInicio, c.vigenciaFim),
-      'Motivo da Dispensa': rotulosMotivoDispensa[c.motivoDispensa] || '',
-      'Processo da Contratação Anterior': c.processoContratacaoAnterior || ''
+      'Processo de Contratação': c.processo_contratacao || '',
+      'Valor Mensal do Contrato': formatarMoeda(c.valor_mensal || 0),
+      'Vigência do Contrato': formatarVigencia(c.vigencia_inicio, c.vigencia_fim),
+      'Motivo da Dispensa': rotulosMotivoDispensa[c.motivo_dispensa] || '',
+      'Processo da Contratação Anterior': c.processo_contratacao_anterior || ''
     }));
   }
 
-  function exportarExcel() {
+  window.exportarExcel = function() {
     const lista = contratosFiltrados();
     if (!lista.length) { alert('Não há contratos para exportar com os filtros atuais.'); return; }
     const dados = dadosParaExportacao(lista);
@@ -1318,7 +1342,7 @@
     XLSX.writeFile(livro, `contratos_${dataAtual}.xlsx`);
   }
 
-  function exportarPDF() {
+  window.exportarPDF = function() {
     const lista = contratosFiltrados();
     if (!lista.length) { alert('Não há contratos para exportar com os filtros atuais.'); return; }
     const { jsPDF } = window.jspdf;
@@ -1361,7 +1385,7 @@
     doc.save(`contratos_${dataAtual}.pdf`);
   }
 
-  renderizarTabela();
+  inicializar();
 </script>
 
 </body>

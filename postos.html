@@ -994,74 +994,37 @@
     </div>
   </div>
 
-<script>
-  // ==========================================================================
-  // Ponto de integração: em produção, o usuário logado e suas permissões vêm
-  // da sessão autenticada no backend. Aqui simulamos um "banco" de usuários
-  // compartilhado (localStorage) para que a permissão definida na aba
-  // Usuários valha de verdade nas demais telas do sistema.
-  // ==========================================================================
-  const MATRICULA_ADMIN_MASTER = '487741101';
+<script type="module">
+  import { supabase, obterPerfilLogado, fazerLogout } from './js/supabase.js';
 
-  function carregarBancoUsuarios() {
-    const banco = JSON.parse(localStorage.getItem('gestconBanco') || 'null');
-    if (banco) return banco;
-    const bancoInicial = {
-      pendentes: [],
-      ativos: [
-        { email: 'administrador do sistema', matricula: MATRICULA_ADMIN_MASTER, administrador: true, master: true }
-      ]
-    };
-    localStorage.setItem('gestconBanco', JSON.stringify(bancoInicial));
-    return bancoInicial;
-  }
+  window.deslogar = fazerLogout;
 
-  const bancoUsuarios = carregarBancoUsuarios();
-  const sessaoSalva = JSON.parse(sessionStorage.getItem('gestconUsuario') || 'null');
-  const matriculaLogada = sessaoSalva ? sessaoSalva.matricula : MATRICULA_ADMIN_MASTER;
-  const usuarioLogado = bancoUsuarios.ativos.find(u => u.matricula === matriculaLogada)
-    || { matricula: matriculaLogada, administrador: false, master: false };
+  let usuarioLogado = null;
+  let usuarioEhAdministrador = false;
+  let usuarioEhMaster = false;
 
-  // Administrador: permissão de edição em Empresas, Contratos e Postos.
-  const usuarioEhAdministrador = !!usuarioLogado.administrador;
-  // Master: único perfil que acessa a aba Usuários (aprova solicitações e concede/revoga administrador).
-  const usuarioEhMaster = !!usuarioLogado.master;
-
-  // Exibe a matrícula do usuário logado na barra superior e habilita o botão "Sair"
-  const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
-  if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
-
-  function deslogar() {
-    sessionStorage.removeItem('gestconUsuario');
-    window.location.href = 'login.html';
-  }
-  if (!usuarioEhMaster) {
-    const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
-    if (linkUsuarios) linkUsuarios.remove();
-  }
-
-  // Mesma base de contratos cadastrados na tela de Contratos
-  let contratos = [];
+  let contratos = []; // Terá a propriedade .postos embutida após o fetch
 
   const rotulosSituacao = { ativo: 'Ativo', encerrado: 'Encerrado', rescindido: 'Rescindido' };
   const rotulosServico = { Limpeza: 'Limpeza', Merendeiras: 'Merendeiras', 'Vigilância': 'Vigilância', Porteiros: 'Porteiros' };
+  const rotulosStatusPosto = { ocupado: 'Ocupado', vago: 'Vago' };
 
   const corpoTabela = document.getElementById('corpo-tabela');
   const estadoVazio = document.getElementById('estado-vazio');
+  
+  // Elementos do Modal de Postos
+  const sobreposicaoPostos = document.getElementById('sobreposicao-postos');
+  const listaPostosEl = document.getElementById('lista-postos');
+  const resumoPostosEl = document.getElementById('resumo-postos');
+  const botaoSalvarPostos = document.getElementById('botao-salvar-postos');
 
-  // Garante que cada contrato tenha um array de postos coerente com quantidadePostos
-  function garantirPostos(contrato) {
-    if (!Array.isArray(contrato.postos)) contrato.postos = [];
-    while (contrato.postos.length < contrato.quantidadePostos) {
-      contrato.postos.push({ municipio: '', local: '', cargaHoraria: '', status: 'vago', responsavel: '' });
-    }
-    if (contrato.postos.length > contrato.quantidadePostos) {
-      contrato.postos.length = contrato.quantidadePostos;
-    }
-  }
-  contratos.forEach(garantirPostos);
+  // Elementos do Modal de Visualizar Contrato
+  const sobreposicaoVisualizar = document.getElementById('sobreposicao-visualizar');
 
-  // Filtros
+  let idContratoEmGestao = null;
+  let postosEmEdicao = []; // Cópia dos postos do contrato para edição
+
+  // Filtros (Aba Contratos)
   const filtroCre = document.getElementById('filtro-cre');
   const filtroLote = document.getElementById('filtro-lote');
   const filtroEmpresa = document.getElementById('filtro-empresa');
@@ -1069,6 +1032,78 @@
   const filtroTipo = document.getElementById('filtro-tipo');
   const botaoLimparFiltros = document.getElementById('botao-limpar-filtros');
 
+  // Relatório de Postos
+  const corpoTabelaRelatorio = document.getElementById('corpo-tabela-relatorio-postos');
+  const estadoVazioRelatorio = document.getElementById('estado-vazio-relatorio-postos');
+  const filtroRelatorioCre = document.getElementById('filtro-relatorio-cre');
+  const filtroRelatorioLote = document.getElementById('filtro-relatorio-lote');
+  const filtroRelatorioMunicipio = document.getElementById('filtro-relatorio-municipio');
+  const filtroRelatorioServico = document.getElementById('filtro-relatorio-servico');
+  const filtroRelatorioStatus = document.getElementById('filtro-relatorio-status');
+  const botaoLimparFiltrosRelatorio = document.getElementById('botao-limpar-filtros-relatorio');
+
+  async function inicializar() {
+    usuarioLogado = await obterPerfilLogado();
+    if (!usuarioLogado || !usuarioLogado.aprovado) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    usuarioEhAdministrador = usuarioLogado.papel === 'administrador' || usuarioLogado.papel === 'master';
+    usuarioEhMaster = usuarioLogado.papel === 'master';
+
+    const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
+    if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
+
+    if (!usuarioEhMaster) {
+      const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+      if (linkUsuarios) linkUsuarios.remove();
+    }
+
+    await carregarDados();
+  }
+
+  async function carregarDados() {
+    // Busca contratos e seus postos de uma vez
+    const { data: dataContratos, error: errorC } = await supabase
+      .from('contratos')
+      .select('*, empresas(nome), postos(*)')
+      .order('criado_em', { ascending: false });
+
+    if (errorC) {
+      console.error("Erro ao carregar contratos/postos:", errorC);
+      return;
+    }
+
+    contratos = dataContratos.map(c => {
+      let postosDb = c.postos || [];
+      // Garante que o array de postos local tenha exatamente 'quantidade_postos' elementos.
+      // Se tiver menos no BD (nunca salvo), criamos objetos vazios.
+      let postosLocais = [...postosDb].sort((a, b) => new Date(a.atualizado_em || 0) - new Date(b.atualizado_em || 0));
+      
+      while (postosLocais.length < c.quantidade_postos) {
+        postosLocais.push({ id: null, municipio: '', local: '', carga_horaria: '', status: 'vago' });
+      }
+      if (postosLocais.length > c.quantidade_postos) {
+        postosLocais.length = c.quantidade_postos;
+      }
+      
+      return {
+        ...c,
+        empresa_nome: c.empresas?.nome || 'Desconhecida',
+        postos_array: postosLocais
+      };
+    });
+
+    renderizarTabela();
+    if (document.getElementById('vista-relatorio-postos').classList.contains('ativa')) {
+      renderizarRelatorioPostos();
+    }
+  }
+
+  // ==========================================
+  // FILTROS & DATALISTS (Aba Contratos)
+  // ==========================================
   function popularDatalist(datalist, valores) {
     datalist.innerHTML = '';
     valores.forEach(valor => {
@@ -1097,7 +1132,7 @@
   function atualizarOpcoesFiltro() {
     popularDatalist(document.getElementById('lista-cre'), valoresUnicos('cre'));
     popularDatalist(document.getElementById('lista-lote'), valoresUnicos('lote'));
-    popularDatalist(document.getElementById('lista-empresa'), valoresUnicos('empresa'));
+    popularDatalist(document.getElementById('lista-empresa'), valoresUnicos('empresa_nome'));
     popularFiltroServico();
   }
 
@@ -1110,18 +1145,14 @@
     return contratos.filter(c =>
       contemTexto(c.cre, filtroCre.value) &&
       contemTexto(c.lote, filtroLote.value) &&
-      contemTexto(c.empresa, filtroEmpresa.value) &&
+      contemTexto(c.empresa_nome, filtroEmpresa.value) &&
       (!filtroServico.value || c.servico === filtroServico.value) &&
-      (!filtroTipo.value || c.tipo === filtroTipo.value)
+      (!filtroTipo.value || c.tipo_contrato === filtroTipo.value)
     );
   }
 
-  [filtroServico, filtroTipo].forEach(select => {
-    select.addEventListener('change', renderizarTabela);
-  });
-  [filtroCre, filtroLote, filtroEmpresa].forEach(input => {
-    input.addEventListener('input', renderizarTabela);
-  });
+  [filtroServico, filtroTipo].forEach(select => select.addEventListener('change', renderizarTabela));
+  [filtroCre, filtroLote, filtroEmpresa].forEach(input => input.addEventListener('input', renderizarTabela));
 
   botaoLimparFiltros.addEventListener('click', () => {
     filtroCre.value = '';
@@ -1132,19 +1163,15 @@
     renderizarTabela();
   });
 
-  function formatarMoeda(centavos) {
-    return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
-
   function postosPreenchidos(contrato) {
-    return contrato.postos.filter(p => p.status === 'ocupado').length;
+    return contrato.postos_array.filter(p => p.status === 'ocupado').length;
   }
 
   function atualizarDashboardPostos() {
     let total = 0;
     let implantados = 0;
     contratos.forEach(contrato => {
-      total += contrato.quantidadePostos;
+      total += contrato.quantidade_postos;
       implantados += postosPreenchidos(contrato);
     });
     document.getElementById('indicador-total').textContent = total;
@@ -1157,32 +1184,34 @@
     atualizarDashboardPostos();
     corpoTabela.innerHTML = '';
     const listaFiltrada = contratosFiltrados();
+    
     estadoVazio.style.display = listaFiltrada.length ? 'none' : 'block';
     estadoVazio.textContent = contratos.length
       ? 'Nenhum contrato encontrado para os filtros selecionados.'
       : 'Nenhum contrato cadastrado ainda.';
+      
     listaFiltrada.forEach((contrato) => {
-      const indice = contratos.indexOf(contrato);
       const linha = document.createElement('tr');
-      const seloTipo = contrato.tipo === 'dispensa'
+      const seloTipo = contrato.tipo_contrato === 'dispensa'
         ? '<span class="selo-tipo dispensa">Dispensa de Licitação</span>'
         : '<span class="selo-tipo licitacao">Licitação</span>';
       const seloSituacao = `<span class="selo-situacao ${contrato.situacao}">${rotulosSituacao[contrato.situacao] || ''}</span>`;
       const preenchidos = postosPreenchidos(contrato);
+      
       linha.innerHTML = `
-        <td class="numero">${contrato.numeroContrato}</td>
+        <td class="numero">${contrato.numero_contrato}</td>
         <td>${seloTipo}</td>
         <td>${seloSituacao}</td>
-        <td>${contrato.empresa}</td>
+        <td>${contrato.empresa_nome}</td>
         <td>${contrato.servico}</td>
         <td class="suave">${contrato.cre}</td>
-        <td class="suave">${contrato.lote}</td>
-        <td>${contrato.quantidadePostos}</td>
-        <td class="contagem-postos"><span style="color:#1B2430;font-weight:600;">${preenchidos}</span> <span class="suave" style="color:#5B6672;">/ ${contrato.quantidadePostos}</span></td>
+        <td class="suave">${contrato.lote || '—'}</td>
+        <td>${contrato.quantidade_postos}</td>
+        <td class="contagem-postos"><span style="color:#1B2430;font-weight:600;">${preenchidos}</span> <span class="suave" style="color:#5B6672;">/ ${contrato.quantidade_postos}</span></td>
         <td>
           <div class="acoes-linha">
-            <button class="botao-icone" onclick="visualizarContrato(${indice})">Visualizar</button>
-            ${usuarioEhAdministrador ? `<button class="botao-gerenciar-postos" onclick="abrirModalPostos(${indice})">
+            <button class="botao-icone" onclick="visualizarContrato('${contrato.id}')">Visualizar</button>
+            ${usuarioEhAdministrador ? `<button class="botao-gerenciar-postos" onclick="abrirModalPostos('${contrato.id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
               Gerenciar Postos
             </button>` : ''}
@@ -1192,52 +1221,47 @@
     });
   }
 
-  // Modal de gerenciamento de postos
-  const sobreposicaoPostos = document.getElementById('sobreposicao-postos');
-  const sobreposicaoVisualizar = document.getElementById('sobreposicao-visualizar');
-  const listaPostosEl = document.getElementById('lista-postos');
-  const resumoPostosEl = document.getElementById('resumo-postos');
-  const botaoSalvarPostos = document.getElementById('botao-salvar-postos');
+  // ==========================================
+  // MODAL: VISUALIZAR CONTRATO
+  // ==========================================
+  window.visualizarContrato = function(id) {
+    const contrato = contratos.find(c => c.id === id);
+    document.getElementById('visualizar-numero-contrato').textContent = contrato.numero_contrato || '—';
+    document.getElementById('visualizar-tipo').textContent = contrato.tipo_contrato === 'dispensa' ? 'Dispensa de Licitação' : 'Licitação';
+    document.getElementById('visualizar-situacao').textContent = rotulosSituacao[contrato.situacao] || '—';
+    document.getElementById('visualizar-empresa').textContent = contrato.empresa_nome || '—';
+    document.getElementById('visualizar-servico').textContent = contrato.servico || '—';
+    document.getElementById('visualizar-cre').textContent = contrato.cre || '—';
+    document.getElementById('visualizar-lote').textContent = contrato.lote || '—';
+    document.getElementById('visualizar-quantidade-postos').textContent = contrato.quantidade_postos ?? '—';
+    document.getElementById('visualizar-postos-preenchidos').textContent = `${postosPreenchidos(contrato)} / ${contrato.quantidade_postos}`;
+    sobreposicaoVisualizar.classList.add('aberta');
+  }
 
-  let indiceContratoEmGestao = null;
-  let postosEmEdicao = [];
+  window.fecharModalVisualizar = function() {
+    sobreposicaoVisualizar.classList.remove('aberta');
+  }
 
-  function abrirModalPostos(indice) {
+  // ==========================================
+  // MODAL: GERENCIAR POSTOS
+  // ==========================================
+  window.abrirModalPostos = function(id) {
     if (!usuarioEhAdministrador) return;
-    indiceContratoEmGestao = indice;
-    const contrato = contratos[indice];
-    garantirPostos(contrato);
-    postosEmEdicao = contrato.postos.map(p => ({ ...p }));
+    idContratoEmGestao = id;
+    const contrato = contratos.find(c => c.id === id);
+    postosEmEdicao = contrato.postos_array.map(p => ({ ...p }));
 
-    document.getElementById('titulo-modal-postos').textContent = `Gerenciar Postos — Contrato ${contrato.numeroContrato}`;
-    document.getElementById('instrucao-modal-postos').textContent = `${contrato.empresa} · ${contrato.servico} · ${contrato.cre}, ${contrato.lote}`;
+    document.getElementById('titulo-modal-postos').textContent = `Gerenciar Postos — Contrato ${contrato.numero_contrato}`;
+    document.getElementById('instrucao-modal-postos').textContent = `${contrato.empresa_nome} · ${contrato.servico} · ${contrato.cre}, ${contrato.lote || 'Sem lote'}`;
 
     renderizarListaPostos();
     sobreposicaoPostos.classList.add('aberta');
   }
 
-  function fecharModalPostos() {
+  window.fecharModalPostos = function() {
     sobreposicaoPostos.classList.remove('aberta');
-    indiceContratoEmGestao = null;
+    idContratoEmGestao = null;
     postosEmEdicao = [];
-  }
-
-  function visualizarContrato(indice) {
-    const contrato = contratos[indice];
-    document.getElementById('visualizar-numero-contrato').textContent = contrato.numeroContrato || '—';
-    document.getElementById('visualizar-tipo').textContent = contrato.tipo === 'dispensa' ? 'Dispensa de Licitação' : 'Licitação';
-    document.getElementById('visualizar-situacao').textContent = rotulosSituacao[contrato.situacao] || '—';
-    document.getElementById('visualizar-empresa').textContent = contrato.empresa || '—';
-    document.getElementById('visualizar-servico').textContent = contrato.servico || '—';
-    document.getElementById('visualizar-cre').textContent = contrato.cre || '—';
-    document.getElementById('visualizar-lote').textContent = contrato.lote || '—';
-    document.getElementById('visualizar-quantidade-postos').textContent = contrato.quantidadePostos ?? '—';
-    document.getElementById('visualizar-postos-preenchidos').textContent = `${postosPreenchidos(contrato)} / ${contrato.quantidadePostos}`;
-    sobreposicaoVisualizar.classList.add('aberta');
-  }
-
-  function fecharModalVisualizar() {
-    sobreposicaoVisualizar.classList.remove('aberta');
   }
 
   function renderizarListaPostos() {
@@ -1260,7 +1284,7 @@
           </div>
           <div class="subcampo">
             <label>Carga Horária</label>
-            <input type="text" placeholder="Ex.: 40h semanais" value="${posto.cargaHoraria || ''}" data-campo="cargaHoraria" data-indice="${i}">
+            <input type="text" placeholder="Ex.: 40h semanais" value="${posto.carga_horaria || ''}" data-campo="cargaHoraria" data-indice="${i}">
           </div>
           <div class="subcampo">
             <label>Status</label>
@@ -1274,19 +1298,13 @@
     });
 
     listaPostosEl.querySelectorAll('input[data-campo="municipio"]').forEach(input => {
-      input.addEventListener('input', (e) => {
-        postosEmEdicao[Number(e.target.dataset.indice)].municipio = e.target.value;
-      });
+      input.addEventListener('input', (e) => postosEmEdicao[Number(e.target.dataset.indice)].municipio = e.target.value);
     });
     listaPostosEl.querySelectorAll('input[data-campo="local"]').forEach(input => {
-      input.addEventListener('input', (e) => {
-        postosEmEdicao[Number(e.target.dataset.indice)].local = e.target.value;
-      });
+      input.addEventListener('input', (e) => postosEmEdicao[Number(e.target.dataset.indice)].local = e.target.value);
     });
     listaPostosEl.querySelectorAll('input[data-campo="cargaHoraria"]').forEach(input => {
-      input.addEventListener('input', (e) => {
-        postosEmEdicao[Number(e.target.dataset.indice)].cargaHoraria = e.target.value;
-      });
+      input.addEventListener('input', (e) => postosEmEdicao[Number(e.target.dataset.indice)].carga_horaria = e.target.value);
     });
     listaPostosEl.querySelectorAll('select[data-campo="status"]').forEach(select => {
       select.addEventListener('change', (e) => {
@@ -1305,19 +1323,46 @@
     resumoPostosEl.textContent = `${total} posto(s) no total — ${ocupados} ocupado(s), ${total - ocupados} vago(s).`;
   }
 
-  botaoSalvarPostos.addEventListener('click', () => {
-    if (!usuarioEhAdministrador) return;
-    if (indiceContratoEmGestao === null) return;
-    const contrato = contratos[indiceContratoEmGestao];
-    contrato.postos = postosEmEdicao.map(p => ({ ...p }));
-    contrato.quantidadePostos = contrato.postos.length;
-    renderizarTabela();
-    renderizarRelatorioPostos();
+  botaoSalvarPostos.addEventListener('click', async () => {
+    if (!usuarioEhAdministrador || idContratoEmGestao === null) return;
+    
+    const textoOriginal = botaoSalvarPostos.textContent;
+    botaoSalvarPostos.textContent = 'Salvando...';
+    botaoSalvarPostos.disabled = true;
+
+    // Salva ou atualiza cada posto individualmente no Supabase
+    let erros = 0;
+    for (const posto of postosEmEdicao) {
+      const dadosPosto = {
+        contrato_id: idContratoEmGestao,
+        municipio: posto.municipio || null,
+        local: posto.local || null,
+        carga_horaria: posto.carga_horaria || null,
+        status: posto.status
+      };
+
+      if (posto.id) {
+        const { error } = await supabase.from('postos').update(dadosPosto).eq('id', posto.id);
+        if (error) { console.error(error); erros++; }
+      } else {
+        const { error } = await supabase.from('postos').insert([dadosPosto]);
+        if (error) { console.error(error); erros++; }
+      }
+    }
+
+    if (erros > 0) alert("Alguns postos não puderam ser salvos.");
+
+    botaoSalvarPostos.textContent = textoOriginal;
+    botaoSalvarPostos.disabled = false;
+    
+    await carregarDados(); // recarrega tudo
     fecharModalPostos();
   });
 
-  // ---------- Abas da página ----------
-  function mostrarVista(nome) {
+  // ==========================================
+  // NAVEGAÇÃO DE ABAS
+  // ==========================================
+  window.mostrarVista = function(nome) {
     document.getElementById('vista-contratos').classList.toggle('ativa', nome === 'contratos');
     document.getElementById('vista-relatorio-postos').classList.toggle('ativa', nome === 'relatorio-postos');
     document.getElementById('aba-contratos').classList.toggle('ativa', nome === 'contratos');
@@ -1325,30 +1370,20 @@
     if (nome === 'relatorio-postos') renderizarRelatorioPostos();
   }
 
-  // ---------- Relatório de Postos ----------
-  const corpoTabelaRelatorio = document.getElementById('corpo-tabela-relatorio-postos');
-  const estadoVazioRelatorio = document.getElementById('estado-vazio-relatorio-postos');
-  const filtroRelatorioCre = document.getElementById('filtro-relatorio-cre');
-  const filtroRelatorioLote = document.getElementById('filtro-relatorio-lote');
-  const filtroRelatorioMunicipio = document.getElementById('filtro-relatorio-municipio');
-  const filtroRelatorioServico = document.getElementById('filtro-relatorio-servico');
-  const filtroRelatorioStatus = document.getElementById('filtro-relatorio-status');
-  const botaoLimparFiltrosRelatorio = document.getElementById('botao-limpar-filtros-relatorio');
-
-  const rotulosStatusPosto = { ocupado: 'Ocupado', vago: 'Vago' };
-
-  // Achata os postos de todos os contratos em uma única lista, trazendo os dados do contrato
+  // ==========================================
+  // RELATÓRIO DE POSTOS
+  // ==========================================
   function todosPostos() {
     return contratos.flatMap(contrato =>
-      (contrato.postos || []).map(posto => ({
+      (contrato.postos_array || []).map(posto => ({
         municipio: posto.municipio || '',
         local: posto.local || '',
-        cargaHoraria: posto.cargaHoraria || '',
+        cargaHoraria: posto.carga_horaria || '',
         status: posto.status || 'vago',
         servico: contrato.servico || '',
         cre: contrato.cre || '',
         lote: contrato.lote || '',
-        numeroContrato: contrato.numeroContrato || ''
+        numeroContrato: contrato.numero_contrato || ''
       }))
     );
   }
@@ -1387,10 +1422,12 @@
     atualizarOpcoesFiltroRelatorio(todosPostos());
     corpoTabelaRelatorio.innerHTML = '';
     const listaFiltrada = postosRelatorioFiltrados();
+    
     estadoVazioRelatorio.style.display = listaFiltrada.length ? 'none' : 'block';
     estadoVazioRelatorio.textContent = todosPostos().length
       ? 'Nenhum posto encontrado para os filtros selecionados.'
       : 'Nenhum posto cadastrado ainda.';
+      
     listaFiltrada.forEach(posto => {
       const linha = document.createElement('tr');
       const seloStatus = `<span class="selo-situacao ${posto.status === 'ocupado' ? 'ativo' : 'rescindido'}">${rotulosStatusPosto[posto.status] || ''}</span>`;
@@ -1407,12 +1444,9 @@
     });
   }
 
-  [filtroRelatorioServico, filtroRelatorioStatus].forEach(select => {
-    select.addEventListener('change', renderizarRelatorioPostos);
-  });
-  [filtroRelatorioCre, filtroRelatorioLote, filtroRelatorioMunicipio].forEach(input => {
-    input.addEventListener('input', renderizarRelatorioPostos);
-  });
+  [filtroRelatorioServico, filtroRelatorioStatus].forEach(select => select.addEventListener('change', renderizarRelatorioPostos));
+  [filtroRelatorioCre, filtroRelatorioLote, filtroRelatorioMunicipio].forEach(input => input.addEventListener('input', renderizarRelatorioPostos));
+  
   botaoLimparFiltrosRelatorio.addEventListener('click', () => {
     filtroRelatorioCre.value = '';
     filtroRelatorioLote.value = '';
@@ -1422,7 +1456,9 @@
     renderizarRelatorioPostos();
   });
 
-  // ---------- Exportação do Relatório de Postos ----------
+  // ==========================================
+  // EXPORTAÇÃO: RELATÓRIO DE POSTOS
+  // ==========================================
   function dadosParaExportacaoPostos(lista) {
     return lista.map(p => ({
       'Município': p.municipio || '',
@@ -1436,7 +1472,7 @@
     }));
   }
 
-  function exportarExcelPostos() {
+  window.exportarExcelPostos = function() {
     const lista = postosRelatorioFiltrados();
     if (!lista.length) { alert('Não há postos para exportar com os filtros atuais.'); return; }
     const dados = dadosParaExportacaoPostos(lista);
@@ -1450,7 +1486,7 @@
     XLSX.writeFile(livro, `relatorio_postos_${dataAtual}.xlsx`);
   }
 
-  function exportarPDFPostos() {
+  window.exportarPDFPostos = function() {
     const lista = postosRelatorioFiltrados();
     if (!lista.length) { alert('Não há postos para exportar com os filtros atuais.'); return; }
     const { jsPDF } = window.jspdf;
@@ -1493,7 +1529,7 @@
     doc.save(`relatorio_postos_${dataAtual}.pdf`);
   }
 
-  renderizarTabela();
+  inicializar();
 </script>
 
 </body>
