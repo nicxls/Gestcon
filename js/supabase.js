@@ -18,7 +18,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Transforma a matrícula num "e-mail falso" para o Supabase Auth aceitar
 export function gerarEmailDaMatricula(matricula) {
-    return `${matricula}@gestcon.local`;
+    return `${matricula}@gestcon.com.br`;
 }
 
 // Verifica se existe um usuário logado no momento
