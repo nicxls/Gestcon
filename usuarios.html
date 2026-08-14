@@ -8,8 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tema.css">
 <script src="js/tema.js"></script>
-<script src="js/exportar-copilot.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
   if (sessionStorage.getItem('gestcon_papel') === 'master') {
     document.documentElement.classList.add('papel-master');
@@ -247,6 +245,7 @@
   tbody tr:last-child td{ border-bottom: none; }
   tbody tr:hover{ background: var(--hover-row); }
   td.email{ font-weight: 600; }
+  td.matricula{ color: var(--texto-suave); font-variant-numeric: tabular-nums; }
   .acoes-linha{
     display: flex;
     gap: 8px;
@@ -409,10 +408,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span>Usuários</span>
       </a>
-      <a class="item-menu link-usuarios" id="btn-exportar-copilot" onclick="exportarDadosCopilot()" style="background: var(--verde-mais-escuro); border: 1px solid rgba(255,255,255,0.2);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="m9 15 6 6M15 15l-6 6"></path></svg>
-        <span>Exportar IA</span>
-      </a>
       <a class="item-menu">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.04z"/></svg>
         <span>Configurações</span>
@@ -455,6 +450,7 @@
             <thead>
               <tr>
                 <th>E-mail</th>
+                <th>Matrícula</th>
                 <th style="width:160px">Ações</th>
               </tr>
             </thead>
@@ -480,6 +476,7 @@
             <thead>
               <tr>
                 <th>E-mail</th>
+                <th>Matrícula</th>
                 <th style="width:150px">Administrador</th>
                 <th style="width:90px">Ações</th>
               </tr>
@@ -566,6 +563,7 @@
       const linha = document.createElement('tr');
       linha.innerHTML = `
         <td class="email">${solicitacao.email}</td>
+        <td class="matricula">${solicitacao.matricula}</td>
         <td>
           <div class="acoes-linha">
             <button class="botao-icone aceitar" onclick="aceitarSolicitacao('${solicitacao.id}', '${solicitacao.email}')">Aceitar</button>
@@ -605,6 +603,7 @@
 
       linha.innerHTML = `
         <td class="email">${usuario.email}</td>
+        <td class="matricula">${usuario.matricula}</td>
         ${celulaAdministrador}
         ${celulaAcoes}`;
       corpoAtivos.appendChild(linha);
