@@ -754,6 +754,7 @@
     botaoSalvar.textContent = 'Enviando...';
     botaoSalvar.disabled = true;
 
+
     // 1. Criar o usuário no Auth usando o E-mail real
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: emailReal,
@@ -761,7 +762,18 @@
     });
 
     if (authError) {
-      alert("Erro ao criar usuário: " + authError.message);
+      const jaExiste = authError.message?.toLowerCase().includes('already registered')
+        || authError.message?.toLowerCase().includes('already exists')
+        || authError.message?.toLowerCase().includes('email address is already');
+
+      if (jaExiste) {
+        campoEmailSolicitar.classList.add('invalido');
+        const erroEmail = document.getElementById('erro-solicitar-email');
+        erroEmail.textContent = 'Este e-mail já possui uma solicitação em andamento ou já está cadastrado.';
+        erroEmail.classList.add('visivel');
+      } else {
+        alert("Erro ao criar usuário: " + authError.message);
+      }
       botaoSalvar.textContent = textoBotaoOriginal;
       botaoSalvar.disabled = false;
       return;
