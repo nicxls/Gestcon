@@ -268,6 +268,18 @@
   tbody tr:hover{ background: var(--hover-row); }
   td.numero{ font-weight: 600; }
   td.suave{ color: var(--texto-suave); }
+  .texto-truncado {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .texto-truncado-curto {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .selo-tipo{
     display: inline-block;
     padding: 3px 9px;
@@ -612,7 +624,7 @@
         </select>
       </div>
       <div class="campo-filtro">
-        <label for="filtro-motivo">Motivo</label>
+        <label for="filtro-motivo">Tipo de Dispensa</label>
         <select id="filtro-motivo">
           <option value="">Todos</option>
           <option value="emergencial">Emergencial</option>
@@ -1130,9 +1142,9 @@
         <td class="numero">${contrato.numero_contrato}</td>
         <td>${seloTipo}</td>
         <td>${seloSituacao}</td>
-        <td>${contrato.empresa_nome}</td>
+        <td class="texto-truncado" title="${contrato.empresa_nome}">${contrato.empresa_nome}</td>
         <td>${contrato.servico}</td>
-        <td class="suave">${contrato.cre}</td>
+        <td class="suave texto-truncado-curto" title="${contrato.cre}">${contrato.cre}</td>
         <td>${formatarMoeda(contrato.valor_mensal)}</td>
         <td>
           <div class="acoes-linha">
