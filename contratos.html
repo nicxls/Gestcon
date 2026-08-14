@@ -1040,8 +1040,6 @@
   }
 
   function atualizarOpcoesFiltro() {
-    popularDatalist(document.getElementById('lista-cre'), valoresUnicos('cre'));
-    popularDatalist(document.getElementById('lista-empresa'), empresasCadastradas.map(e => e.nome).sort((a, b) => a.localeCompare(b, 'pt-BR')));
     popularFiltro(filtroServico, Object.keys(rotulosServico), true);
   }
 
