@@ -296,7 +296,7 @@
     padding: 16px 20px;
     margin-bottom: 16px;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 14px;
     align-items: end;
   }
@@ -585,11 +585,6 @@
         <datalist id="lista-cre"></datalist>
       </div>
       <div class="campo-filtro">
-        <label for="filtro-lote">Lote</label>
-        <input type="text" id="filtro-lote" list="lista-lote" placeholder="Digite ou selecione" autocomplete="off">
-        <datalist id="lista-lote"></datalist>
-      </div>
-      <div class="campo-filtro">
         <label for="filtro-empresa">Empresa</label>
         <input type="text" id="filtro-empresa" list="lista-empresa" placeholder="Digite ou selecione" autocomplete="off">
         <datalist id="lista-empresa"></datalist>
@@ -601,11 +596,27 @@
         </select>
       </div>
       <div class="campo-filtro">
-        <label for="filtro-tipo">Tipo de Contrato</label>
+        <label for="filtro-tipo">Tipo</label>
         <select id="filtro-tipo">
           <option value="">Todos</option>
           <option value="dispensa">Dispensa de Licitação</option>
           <option value="licitacao">Licitação</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-conta-vinculada">C. Vinculada</label>
+        <select id="filtro-conta-vinculada">
+          <option value="">Todos</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-motivo">Motivo</label>
+        <select id="filtro-motivo">
+          <option value="">Todos</option>
+          <option value="emergencial">Emergencial</option>
+          <option value="remanescente">Remanescente</option>
         </select>
       </div>
       <button type="button" class="botao-limpar-filtros" id="botao-limpar-filtros">Limpar filtros</button>
@@ -622,9 +633,8 @@
               <th>Empresa</th>
               <th>Serviço</th>
               <th>CRE</th>
-              <th>Lote</th>
               <th>Valor Mensal</th>
-              <th style="width:140px">Ações</th>
+              <th style="width:110px">Ações</th>
             </tr>
           </thead>
           <tbody id="corpo-tabela"></tbody>
@@ -913,10 +923,11 @@
 
   // Filtros
   const filtroCre = document.getElementById('filtro-cre');
-  const filtroLote = document.getElementById('filtro-lote');
   const filtroEmpresa = document.getElementById('filtro-empresa');
   const filtroServico = document.getElementById('filtro-servico');
   const filtroTipo = document.getElementById('filtro-tipo');
+  const filtroContaVinculada = document.getElementById('filtro-conta-vinculada');
+  const filtroMotivo = document.getElementById('filtro-motivo');
   const botaoLimparFiltros = document.getElementById('botao-limpar-filtros');
 
   async function inicializar() {
@@ -1020,7 +1031,6 @@
 
   function atualizarOpcoesFiltro() {
     popularDatalist(document.getElementById('lista-cre'), valoresUnicos('cre'));
-    popularDatalist(document.getElementById('lista-lote'), valoresUnicos('lote'));
     popularDatalist(document.getElementById('lista-empresa'), empresasCadastradas.map(e => e.nome).sort((a, b) => a.localeCompare(b, 'pt-BR')));
     popularFiltro(filtroServico, Object.keys(rotulosServico), true);
   }
@@ -1033,22 +1043,24 @@
   function contratosFiltrados() {
     return contratos.filter(c =>
       contemTexto(c.cre, filtroCre.value) &&
-      contemTexto(c.lote, filtroLote.value) &&
       contemTexto(c.empresa_nome, filtroEmpresa.value) &&
       (!filtroServico.value || c.servico === filtroServico.value) &&
-      (!filtroTipo.value || c.tipo_contrato === filtroTipo.value)
+      (!filtroTipo.value || c.tipo_contrato === filtroTipo.value) &&
+      (!filtroContaVinculada.value || c.conta_vinculada === filtroContaVinculada.value) &&
+      (!filtroMotivo.value || c.motivo_dispensa === filtroMotivo.value)
     );
   }
 
-  [filtroServico, filtroTipo].forEach(select => select.addEventListener('change', renderizarTabela));
-  [filtroCre, filtroLote, filtroEmpresa].forEach(input => input.addEventListener('input', renderizarTabela));
+  [filtroServico, filtroTipo, filtroContaVinculada, filtroMotivo].forEach(select => select.addEventListener('change', renderizarTabela));
+  [filtroCre, filtroEmpresa].forEach(input => input.addEventListener('input', renderizarTabela));
 
   botaoLimparFiltros.addEventListener('click', () => {
     filtroCre.value = '';
-    filtroLote.value = '';
     filtroEmpresa.value = '';
     filtroServico.value = '';
     filtroTipo.value = '';
+    filtroContaVinculada.value = '';
+    filtroMotivo.value = '';
     renderizarTabela();
   });
 
@@ -1121,13 +1133,18 @@
         <td>${contrato.empresa_nome}</td>
         <td>${contrato.servico}</td>
         <td class="suave">${contrato.cre}</td>
-        <td class="suave">${contrato.lote || '—'}</td>
         <td>${formatarMoeda(contrato.valor_mensal)}</td>
         <td>
           <div class="acoes-linha">
-            <button class="botao-icone" onclick="visualizarContrato('${contrato.id}')">Visualizar</button>
-            ${usuarioEhAdministrador ? `<button class="botao-icone" onclick="editarContrato('${contrato.id}')">Editar</button>
-            <button class="botao-icone" onclick="excluirContrato('${contrato.id}')">Excluir</button>` : ''}
+            <button class="botao-icone" onclick="visualizarContrato('${contrato.id}')" title="Visualizar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+            ${usuarioEhAdministrador ? `<button class="botao-icone" onclick="editarContrato('${contrato.id}')" title="Editar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            <button class="botao-icone" onclick="excluirContrato('${contrato.id}')" title="Excluir">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </button>` : ''}
           </div>
         </td>`;
       corpoTabela.appendChild(linha);
@@ -1329,7 +1346,6 @@
       'Serviço': c.servico || '',
       'Quantidade de Postos': c.quantidade_postos ?? '',
       'CRE': c.cre || '',
-      'Lote': c.lote || '',
       'Processo de Licitação': c.processo_licitacao || '',
       'Edital': c.edital || '',
       'Processo de Contratação': c.processo_contratacao || '',
@@ -1365,10 +1381,11 @@
 
     const filtrosAtivos = [];
     if (filtroCre.value) filtrosAtivos.push(`CRE: ${filtroCre.value}`);
-    if (filtroLote.value) filtrosAtivos.push(`Lote: ${filtroLote.value}`);
     if (filtroEmpresa.value) filtrosAtivos.push(`Empresa: ${filtroEmpresa.value}`);
     if (filtroServico.value) filtrosAtivos.push(`Serviço: ${filtroServico.value}`);
     if (filtroTipo.value) filtrosAtivos.push(`Tipo: ${filtroTipo.options[filtroTipo.selectedIndex].text}`);
+    if (filtroContaVinculada.value) filtrosAtivos.push(`C. Vinculada: ${filtroContaVinculada.options[filtroContaVinculada.selectedIndex].text}`);
+    if (filtroMotivo.value) filtrosAtivos.push(`Motivo: ${filtroMotivo.options[filtroMotivo.selectedIndex].text}`);
 
     doc.setFontSize(14);
     doc.setTextColor(0, 81, 46);
