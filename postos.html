@@ -6,6 +6,8 @@
 <title>Postos — Sistema</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tema.css">
+<script src="js/tema.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -16,18 +18,7 @@
   }
 </script>
 <style>
-  :root{
-    --verde: #00512E;
-    --verde-escuro: #00381F;
-    --verde-mais-escuro: #042415;
-    --bg: #F4F6F8;
-    --texto: #1B2430;
-    --texto-suave: #5B6672;
-    --linha: #DDE3E9;
-    --erro: #B3261E;
-    --erro-bg: #FBECEB;
-    --sucesso: #1E7B45;
-  }
+  /* Variáveis de tema centralizadas em css/tema.css */
   *{ box-sizing: border-box; }
   body{
     margin: 0;
@@ -141,7 +132,7 @@
     justify-content: flex-end;
     gap: 14px;
     padding: 12px 36px;
-    background: #fff;
+    background: var(--card-bg);
     border-bottom: 1px solid var(--linha);
     flex-shrink: 0;
   }
@@ -224,7 +215,7 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    background: #fff;
+    background: var(--card-bg);
     color: var(--texto);
     border: 1px solid var(--linha);
     padding: 10px 16px;
@@ -235,7 +226,7 @@
     white-space: nowrap;
     transition: background .15s ease, border-color .15s ease;
   }
-  .botao-secundario:hover{ background: #FAFBFC; border-color: #C9D2CB; }
+  .botao-secundario:hover{ background: var(--hover-row); border-color: var(--texto-suave); }
   .botao-secundario svg{ flex-shrink: 0; }
   .grupo-acoes-topo{
     display: flex;
@@ -244,7 +235,7 @@
   }
 
   .cartao-tabela{
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--linha);
     border-radius: 10px;
     overflow: hidden;
@@ -266,7 +257,7 @@
     letter-spacing: 0.04em;
     padding: 13px 20px;
     border-bottom: 1px solid var(--linha);
-    background: #FAFBFC;
+    background: var(--thead-bg);
     white-space: nowrap;
   }
   tbody td{
@@ -276,7 +267,7 @@
     white-space: nowrap;
   }
   tbody tr:last-child td{ border-bottom: none; }
-  tbody tr:hover{ background: #FAFBFC; }
+  tbody tr:hover{ background: var(--hover-row); }
   td.numero{ font-weight: 600; }
   td.suave{ color: var(--texto-suave); }
   .selo-tipo{
@@ -301,7 +292,7 @@
 
   /* Filtros */
   .cartao-filtros{
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--linha);
     border-radius: 10px;
     padding: 16px 20px;
@@ -328,13 +319,13 @@
     font-size: 13.5px;
     font-family: inherit;
     color: var(--texto);
-    background: #FBFCFD;
+    background: var(--input-bg);
   }
   .campo-filtro select:focus, .campo-filtro input:focus{
     outline: none;
     border-color: var(--verde);
     box-shadow: 0 0 0 3px rgba(0,81,46,0.14);
-    background: #fff;
+    background: var(--card-bg);
   }
   .botao-limpar-filtros{
     grid-column: 1 / -1;
@@ -357,7 +348,7 @@
   }
   .botao-icone{
     border: 1px solid var(--linha);
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 6px;
     padding: 5px 9px;
     font-size: 12px;
@@ -388,7 +379,7 @@
   .modal-cartao{
     width: 100%;
     max-width: 640px;
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 10px;
     padding: 28px 30px 26px;
     margin: auto;
@@ -426,7 +417,7 @@
     font-size: 14px;
     font-family: inherit;
     color: var(--texto);
-    background: #FBFCFD;
+    background: var(--input-bg);
   }
   .campo textarea{
     resize: vertical;
@@ -436,7 +427,7 @@
     outline: none;
     border-color: var(--verde);
     box-shadow: 0 0 0 3px rgba(0,81,46,0.14);
-    background: #fff;
+    background: var(--card-bg);
   }
   .campo input.invalido, .campo select.invalido, .campo textarea.invalido{
     border-color: var(--erro);
@@ -467,7 +458,7 @@
   }
   .botao-salvar{ background: var(--verde); color: #fff; }
   .botao-salvar:hover{ background: var(--verde-escuro); }
-  .botao-cancelar{ background: #fff; color: var(--texto); border: 1px solid var(--linha); }
+  .botao-cancelar{ background: var(--card-bg); color: var(--texto); border: 1px solid var(--linha); }
   .botao-cancelar:hover{ border-color: var(--texto-suave); }
 
   .lista-visualizacao{
@@ -510,7 +501,7 @@
     align-items: center;
     gap: 6px;
     border: 1px solid var(--linha);
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 6px;
     padding: 6px 11px;
     font-size: 12.5px;
@@ -519,7 +510,7 @@
     cursor: pointer;
     white-space: nowrap;
   }
-  .botao-gerenciar-postos:hover{ background: #E8F1EC; border-color: var(--verde); }
+  .botao-gerenciar-postos:hover{ background: var(--hover-row); border-color: var(--verde); }
   .botao-gerenciar-postos svg{ width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
 
   .contagem-postos{ color:#1B2430 !important; font-weight:600; }
@@ -537,7 +528,7 @@
     margin-bottom: 20px;
   }
   .cartao-indicador{
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--linha);
     border-radius: 10px;
     padding: 16px 20px;
@@ -592,7 +583,7 @@
     padding: 12px 14px;
     border: 1px solid var(--linha);
     border-radius: 8px;
-    background: #FBFCFD;
+    background: var(--input-bg);
   }
   .posto-item .posto-cabecalho{
     display: flex;
@@ -626,7 +617,7 @@
     font-size: 13px;
     font-family: inherit;
     color: var(--texto);
-    background: #fff;
+    background: var(--card-bg);
   }
   .posto-item input:focus, .posto-item select:focus{
     outline: none;
@@ -744,6 +735,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span id="nome-usuario-topo">—</span>
     </div>
+    <button type="button" class="botao-tema" onclick="toggleTema()" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+      <svg class="icone-lua" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icone-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
     <button type="button" class="botao-sair-topo" onclick="deslogar()">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
       Sair

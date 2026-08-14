@@ -6,21 +6,15 @@
 <title>Usuários — Sistema</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --verde: #00512E;
-    --verde-escuro: #00381F;
-    --verde-mais-escuro: #042415;
-    --bg: #F4F6F8;
-    --texto: #1B2430;
-    --texto-suave: #5B6672;
-    --linha: #DDE3E9;
-    --erro: #B3261E;
-    --erro-bg: #FBECEB;
-    --sucesso: #1E7B45;
-    --pendente: #B7791F;
-    --pendente-bg: #FBF3E4;
+<link rel="stylesheet" href="css/tema.css">
+<script src="js/tema.js"></script>
+<script>
+  if (sessionStorage.getItem('gestcon_papel') === 'master') {
+    document.documentElement.classList.add('papel-master');
   }
+</script>
+<style>
+  /* Variáveis de tema centralizadas em css/tema.css */
   *{ box-sizing: border-box; }
   body{
     margin: 0;
@@ -131,7 +125,7 @@
     justify-content: flex-end;
     gap: 14px;
     padding: 12px 36px;
-    background: #fff;
+    background: var(--card-bg);
     border-bottom: 1px solid var(--linha);
     flex-shrink: 0;
   }
@@ -222,7 +216,7 @@
   }
 
   .cartao-tabela{
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--linha);
     border-radius: 10px;
     overflow: hidden;
@@ -240,7 +234,7 @@
     letter-spacing: 0.04em;
     padding: 13px 20px;
     border-bottom: 1px solid var(--linha);
-    background: #FAFBFC;
+    background: var(--thead-bg);
   }
   tbody td{
     padding: 14px 20px;
@@ -249,7 +243,7 @@
     vertical-align: middle;
   }
   tbody tr:last-child td{ border-bottom: none; }
-  tbody tr:hover{ background: #FAFBFC; }
+  tbody tr:hover{ background: var(--hover-row); }
   td.email{ font-weight: 600; }
   td.matricula{ color: var(--texto-suave); font-variant-numeric: tabular-nums; }
   .acoes-linha{
@@ -258,7 +252,7 @@
   }
   .botao-icone{
     border: 1px solid var(--linha);
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 6px;
     padding: 5px 9px;
     font-size: 12px;
@@ -328,7 +322,7 @@
     max-width: 420px;
     margin: 60px auto 0;
     text-align: center;
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--linha);
     border-radius: 10px;
     padding: 36px 30px;
@@ -427,6 +421,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span id="nome-usuario-topo">—</span>
     </div>
+    <button type="button" class="botao-tema" onclick="toggleTema()" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+      <svg class="icone-lua" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icone-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
     <button type="button" class="botao-sair-topo" onclick="deslogar()">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
       Sair

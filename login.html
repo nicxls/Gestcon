@@ -6,20 +6,11 @@
 <title>Acesso ao Sistema — GestCon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tema.css">
+<script src="js/tema.js"></script>
 <style>
-  :root{
-    --verde: #00512E;      /* verde institucional, base da bandeira do RS */
-    --verde-escuro: #00381F;
-    --vermelho: #B7212B;   /* vermelho da bandeira */
-    --dourado: #E3A63E;    /* amarelo/dourado da bandeira, usado como acento */
-    --bg: #F3F5F2;
-    --card-bg: #FFFFFF;
-    --texto: #16241D;
-    --texto-suave: #55655C;
-    --linha: #DDE3DD;
-    --foco: #0B6B3A;
-    --radius: 10px;
-  }
+  /* Variáveis de tema centralizadas em css/tema.css */
+  /* Login tem card-bg e foco próprios, sobrepostos abaixo via tema.css */
 
   *{ box-sizing: border-box; }
   html, body{ height: 100%; }
@@ -138,7 +129,7 @@
     outline: none;
     border-color: var(--foco);
     box-shadow: 0 0 0 3px rgba(11,107,58,0.14);
-    background: #fff;
+    background: var(--card-bg);
   }
 
   .campo-entrada svg{
@@ -231,11 +222,11 @@
     padding: 14px 16px;
     border: 1px solid var(--linha);
     border-radius: 10px;
-    background: #FBFCFB;
+    background: var(--input-bg);
     cursor: pointer;
     transition: border-color .15s ease, background .15s ease, transform .05s ease;
   }
-  .botao-modo-acesso:hover{ border-color: var(--foco); background: #fff; }
+  .botao-modo-acesso:hover{ border-color: var(--foco); background: var(--card-bg); }
   .botao-modo-acesso:active{ transform: translateY(1px); }
   .botao-modo-acesso:focus-visible{
     outline: 3px solid var(--dourado);
@@ -296,7 +287,7 @@
   .modal-cartao{
     width: 100%;
     max-width: 420px;
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 10px;
     padding: 30px 30px 26px;
   }
@@ -334,7 +325,7 @@
     outline: none;
     border-color: var(--foco);
     box-shadow: 0 0 0 3px rgba(11,107,58,0.14);
-    background: #fff;
+    background: var(--card-bg);
   }
   .campo .campo-entrada input.invalido{
     border-color: var(--vermelho);
@@ -363,7 +354,7 @@
   }
   .botao-salvar{ background: var(--verde); color: #fff; }
   .botao-salvar:hover{ background: var(--verde-escuro); }
-  .botao-cancelar{ background: #fff; color: var(--texto); border: 1px solid var(--linha); }
+  .botao-cancelar{ background: var(--card-bg); color: var(--texto); border: 1px solid var(--linha); }
   .botao-cancelar:hover{ border-color: var(--texto-suave); }
 
   .estado-confirmacao{
@@ -393,6 +384,14 @@
     line-height: 1.5;
   }
 
+  /* Botão toggle flutuante no login */
+  .botao-tema-login{
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    z-index: 100;
+  }
+
   @media (max-width: 420px){
     .cartao-login{ padding: 28px 22px 24px; }
     .nome-sistema{ font-size: 23px; }
@@ -404,6 +403,14 @@
 <body>
 
   <div class="faixa-estado"></div>
+
+  <!-- Botão toggle de tema -->
+  <div class="botao-tema-login">
+    <button type="button" class="botao-tema" onclick="toggleTema()" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+      <svg class="icone-lua" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icone-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
 
   <header class="topo">
     <!-- Placeholder do brasão oficial: substitua o SVG abaixo pelo arquivo oficial

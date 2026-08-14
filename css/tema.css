@@ -1,0 +1,130 @@
+﻿/* ============================================================
+   GestCon — Sistema de variáveis de tema (claro / escuro)
+   Inclua este arquivo em todas as páginas do sistema.
+   ============================================================ */
+
+/* ── TEMA CLARO (padrão) ─────────────────────────────────── */
+:root {
+  --verde:            #00512E;
+  --verde-escuro:     #00381F;
+  --verde-mais-escuro:#042415;
+  --bg:               #F4F6F8;
+  --card-bg:          #FFFFFF;
+  --thead-bg:         #FAFBFC;
+  --input-bg:         #FBFCFD;
+  --hover-row:        #FAFBFC;
+  --texto:            #1B2430;
+  --texto-suave:      #5B6672;
+  --linha:            #DDE3E9;
+  --erro:             #B3261E;
+  --erro-bg:          #FBECEB;
+  --sucesso:          #1E7B45;
+  --pendente:         #B7791F;
+  --pendente-bg:      #FBF3E4;
+  --vermelho:         #B7212B;
+  --dourado:          #E3A63E;
+  --foco:             #0B6B3A;
+  --radius:           10px;
+  --toggle-bg:        #EAEDF0;
+  --toggle-color:     #5B6672;
+  --toggle-hover-bg:  #DDE3E9;
+}
+
+/* ── TEMA ESCURO ─────────────────────────────────────────── */
+[data-tema="dark"] {
+  --verde:            #2DB87A;
+  --verde-escuro:     #1E9E60;
+  --verde-mais-escuro:#0D1F18;
+  --bg:               #0F1419;
+  --card-bg:          #1A2230;
+  --thead-bg:         #151E2A;
+  --input-bg:         #0F1825;
+  --hover-row:        #1F2D3D;
+  --texto:            #E8EDF2;
+  --texto-suave:      #8A98A8;
+  --linha:            #2A3545;
+  --erro:             #F87171;
+  --erro-bg:          #3B1A1A;
+  --sucesso:          #4ADE80;
+  --pendente:         #FBBF24;
+  --pendente-bg:      #2D1F08;
+  --vermelho:         #F87171;
+  --dourado:          #FBBF24;
+  --foco:             #2DB87A;
+  --toggle-bg:        #2A3545;
+  --toggle-color:     #8A98A8;
+  --toggle-hover-bg:  #364457;
+}
+
+/* ── FALLBACK: respeita preferência do SO (sem toggle manual) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="light"]) {
+    --verde:            #2DB87A;
+    --verde-escuro:     #1E9E60;
+    --verde-mais-escuro:#0D1F18;
+    --bg:               #0F1419;
+    --card-bg:          #1A2230;
+    --thead-bg:         #151E2A;
+    --input-bg:         #0F1825;
+    --hover-row:        #1F2D3D;
+    --texto:            #E8EDF2;
+    --texto-suave:      #8A98A8;
+    --linha:            #2A3545;
+    --erro:             #F87171;
+    --erro-bg:          #3B1A1A;
+    --sucesso:          #4ADE80;
+    --pendente:         #FBBF24;
+    --pendente-bg:      #2D1F08;
+    --vermelho:         #F87171;
+    --dourado:          #FBBF24;
+    --foco:             #2DB87A;
+    --toggle-bg:        #2A3545;
+    --toggle-color:     #8A98A8;
+    --toggle-hover-bg:  #364457;
+  }
+}
+
+/* ── Botão de toggle de tema ─────────────────────────────── */
+.botao-tema {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--linha);
+  border-radius: 7px;
+  background: var(--toggle-bg);
+  color: var(--toggle-color);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .1s ease;
+  flex-shrink: 0;
+}
+.botao-tema:hover {
+  background: var(--toggle-hover-bg);
+  border-color: var(--texto-suave);
+  color: var(--texto);
+}
+.botao-tema:active { transform: scale(0.93); }
+.botao-tema svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Ícone: mostra lua no light, sol no dark */
+.botao-tema .icone-lua  { display: block; }
+.botao-tema .icone-sol  { display: none;  }
+[data-tema="dark"] .botao-tema .icone-lua { display: none;  }
+[data-tema="dark"] .botao-tema .icone-sol { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="light"]) .botao-tema .icone-lua { display: none;  }
+  :root:not([data-tema="light"]) .botao-tema .icone-sol { display: block; }
+}
+
+/* ── Transição suave ao trocar tema ─────────────────────── */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: .2s;
+  transition-timing-function: ease;
+}
+button, a, input, select, textarea {
+  transition: background-color .15s ease, border-color .15s ease,
+              color .15s ease, box-shadow .15s ease,
+              transform .05s ease, opacity .15s ease;
+}
