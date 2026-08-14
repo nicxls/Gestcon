@@ -270,6 +270,18 @@
   tbody tr:hover{ background: var(--hover-row); }
   td.numero{ font-weight: 600; }
   td.suave{ color: var(--texto-suave); }
+  .texto-truncado {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .texto-truncado-curto {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .selo-tipo{
     display: inline-block;
     padding: 3px 9px;
@@ -298,7 +310,7 @@
     padding: 16px 20px;
     margin-bottom: 16px;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 14px;
     align-items: end;
   }
@@ -803,11 +815,6 @@
         <datalist id="lista-cre"></datalist>
       </div>
       <div class="campo-filtro">
-        <label for="filtro-lote">Lote</label>
-        <input type="text" id="filtro-lote" list="lista-lote" placeholder="Digite ou selecione" autocomplete="off">
-        <datalist id="lista-lote"></datalist>
-      </div>
-      <div class="campo-filtro">
         <label for="filtro-empresa">Empresa</label>
         <input type="text" id="filtro-empresa" list="lista-empresa" placeholder="Digite ou selecione" autocomplete="off">
         <datalist id="lista-empresa"></datalist>
@@ -819,11 +826,27 @@
         </select>
       </div>
       <div class="campo-filtro">
-        <label for="filtro-tipo">Tipo de Contrato</label>
+        <label for="filtro-tipo">Tipo</label>
         <select id="filtro-tipo">
           <option value="">Todos</option>
           <option value="dispensa">Dispensa de Licitação</option>
           <option value="licitacao">Licitação</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-conta-vinculada">C. Vinculada</label>
+        <select id="filtro-conta-vinculada">
+          <option value="">Todos</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-motivo">Tipo de Dispensa</label>
+        <select id="filtro-motivo">
+          <option value="">Todos</option>
+          <option value="emergencial">Emergencial</option>
+          <option value="remanescente">Remanescente</option>
         </select>
       </div>
       <button type="button" class="botao-limpar-filtros" id="botao-limpar-filtros">Limpar filtros</button>
@@ -840,10 +863,9 @@
               <th>Empresa</th>
               <th>Serviço</th>
               <th>CRE</th>
-              <th>Lote</th>
               <th>Qtd. de Postos</th>
               <th>Postos Preenchidos</th>
-              <th style="width:280px">Ações</th>
+              <th style="width:190px">Ações</th>
             </tr>
           </thead>
           <tbody id="corpo-tabela"></tbody>
@@ -880,9 +902,20 @@
           <datalist id="lista-relatorio-cre"></datalist>
         </div>
         <div class="campo-filtro">
-          <label for="filtro-relatorio-lote">Lote</label>
-          <input type="text" id="filtro-relatorio-lote" list="lista-relatorio-lote" placeholder="Digite ou selecione" autocomplete="off">
-          <datalist id="lista-relatorio-lote"></datalist>
+          <label for="filtro-relatorio-conta">C. Vinculada</label>
+          <select id="filtro-relatorio-conta">
+            <option value="">Todos</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+        <div class="campo-filtro">
+          <label for="filtro-relatorio-motivo">Tipo de Dispensa</label>
+          <select id="filtro-relatorio-motivo">
+            <option value="">Todos</option>
+            <option value="emergencial">Emergencial</option>
+            <option value="remanescente">Remanescente</option>
+          </select>
         </div>
         <div class="campo-filtro">
           <label for="filtro-relatorio-municipio">Município</label>
@@ -916,7 +949,6 @@
                 <th>Carga Horária</th>
                 <th>Serviço</th>
                 <th>CRE</th>
-                <th>Lote</th>
                 <th>Nº Contrato</th>
                 <th>Status</th>
               </tr>
@@ -1030,17 +1062,19 @@
 
   // Filtros (Aba Contratos)
   const filtroCre = document.getElementById('filtro-cre');
-  const filtroLote = document.getElementById('filtro-lote');
   const filtroEmpresa = document.getElementById('filtro-empresa');
   const filtroServico = document.getElementById('filtro-servico');
   const filtroTipo = document.getElementById('filtro-tipo');
+  const filtroContaVinculada = document.getElementById('filtro-conta-vinculada');
+  const filtroMotivo = document.getElementById('filtro-motivo');
   const botaoLimparFiltros = document.getElementById('botao-limpar-filtros');
 
   // Relatório de Postos
   const corpoTabelaRelatorio = document.getElementById('corpo-tabela-relatorio-postos');
   const estadoVazioRelatorio = document.getElementById('estado-vazio-relatorio-postos');
   const filtroRelatorioCre = document.getElementById('filtro-relatorio-cre');
-  const filtroRelatorioLote = document.getElementById('filtro-relatorio-lote');
+  const filtroRelatorioConta = document.getElementById('filtro-relatorio-conta');
+  const filtroRelatorioMotivo = document.getElementById('filtro-relatorio-motivo');
   const filtroRelatorioMunicipio = document.getElementById('filtro-relatorio-municipio');
   const filtroRelatorioServico = document.getElementById('filtro-relatorio-servico');
   const filtroRelatorioStatus = document.getElementById('filtro-relatorio-status');
@@ -1144,7 +1178,6 @@
 
   function atualizarOpcoesFiltro() {
     popularDatalist(document.getElementById('lista-cre'), valoresUnicos('cre'));
-    popularDatalist(document.getElementById('lista-lote'), valoresUnicos('lote'));
     popularDatalist(document.getElementById('lista-empresa'), valoresUnicos('empresa_nome'));
     popularFiltroServico();
   }
@@ -1157,22 +1190,24 @@
   function contratosFiltrados() {
     return contratos.filter(c =>
       contemTexto(c.cre, filtroCre.value) &&
-      contemTexto(c.lote, filtroLote.value) &&
       contemTexto(c.empresa_nome, filtroEmpresa.value) &&
       (!filtroServico.value || c.servico === filtroServico.value) &&
-      (!filtroTipo.value || c.tipo_contrato === filtroTipo.value)
+      (!filtroTipo.value || c.tipo_contrato === filtroTipo.value) &&
+      (!filtroContaVinculada.value || c.conta_vinculada === filtroContaVinculada.value) &&
+      (!filtroMotivo.value || c.motivo_dispensa === filtroMotivo.value)
     );
   }
 
-  [filtroServico, filtroTipo].forEach(select => select.addEventListener('change', renderizarTabela));
-  [filtroCre, filtroLote, filtroEmpresa].forEach(input => input.addEventListener('input', renderizarTabela));
+  [filtroServico, filtroTipo, filtroContaVinculada, filtroMotivo].forEach(select => select.addEventListener('change', renderizarTabela));
+  [filtroCre, filtroEmpresa].forEach(input => input.addEventListener('input', renderizarTabela));
 
   botaoLimparFiltros.addEventListener('click', () => {
     filtroCre.value = '';
-    filtroLote.value = '';
     filtroEmpresa.value = '';
     filtroServico.value = '';
     filtroTipo.value = '';
+    filtroContaVinculada.value = '';
+    filtroMotivo.value = '';
     renderizarTabela();
   });
 
@@ -1215,15 +1250,16 @@
         <td class="numero">${contrato.numero_contrato}</td>
         <td>${seloTipo}</td>
         <td>${seloSituacao}</td>
-        <td>${contrato.empresa_nome}</td>
+        <td class="texto-truncado" title="${contrato.empresa_nome}">${contrato.empresa_nome}</td>
         <td>${contrato.servico}</td>
-        <td class="suave">${contrato.cre}</td>
-        <td class="suave">${contrato.lote || '—'}</td>
+        <td class="suave texto-truncado-curto" title="${contrato.cre}">${contrato.cre}</td>
         <td>${contrato.quantidade_postos}</td>
         <td class="contagem-postos"><span style="color:#1B2430;font-weight:600;">${preenchidos}</span> <span class="suave" style="color:#5B6672;">/ ${contrato.quantidade_postos}</span></td>
         <td>
           <div class="acoes-linha">
-            <button class="botao-icone" onclick="visualizarContrato('${contrato.id}')">Visualizar</button>
+            <button class="botao-icone" onclick="visualizarContrato('${contrato.id}')" title="Visualizar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
             ${usuarioEhAdministrador ? `<button class="botao-gerenciar-postos" onclick="abrirModalPostos('${contrato.id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
               Gerenciar Postos
@@ -1395,7 +1431,8 @@
         status: posto.status || 'vago',
         servico: contrato.servico || '',
         cre: contrato.cre || '',
-        lote: contrato.lote || '',
+        contaVinculada: contrato.conta_vinculada || '',
+        motivoDispensa: contrato.motivo_dispensa || '',
         numeroContrato: contrato.numero_contrato || ''
       }))
     );
@@ -1415,7 +1452,6 @@
 
   function atualizarOpcoesFiltroRelatorio(lista) {
     popularDatalist(document.getElementById('lista-relatorio-cre'), [...new Set(lista.map(p => p.cre).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')));
-    popularDatalist(document.getElementById('lista-relatorio-lote'), [...new Set(lista.map(p => p.lote).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')));
     popularDatalist(document.getElementById('lista-relatorio-municipio'), [...new Set(lista.map(p => p.municipio).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')));
     popularFiltroRelatorioServico();
   }
@@ -1424,8 +1460,9 @@
     const lista = todosPostos();
     return lista.filter(p =>
       contemTexto(p.cre, filtroRelatorioCre.value) &&
-      contemTexto(p.lote, filtroRelatorioLote.value) &&
       contemTexto(p.municipio, filtroRelatorioMunicipio.value) &&
+      (!filtroRelatorioConta.value || p.contaVinculada === filtroRelatorioConta.value) &&
+      (!filtroRelatorioMotivo.value || p.motivoDispensa === filtroRelatorioMotivo.value) &&
       (!filtroRelatorioServico.value || p.servico === filtroRelatorioServico.value) &&
       (!filtroRelatorioStatus.value || p.status === filtroRelatorioStatus.value)
     );
@@ -1445,24 +1482,24 @@
       const linha = document.createElement('tr');
       const seloStatus = `<span class="selo-situacao ${posto.status === 'ocupado' ? 'ativo' : 'rescindido'}">${rotulosStatusPosto[posto.status] || ''}</span>`;
       linha.innerHTML = `
-        <td>${posto.municipio || '—'}</td>
-        <td>${posto.local || '—'}</td>
+        <td class="texto-truncado-curto" title="${posto.municipio || ''}">${posto.municipio || '—'}</td>
+        <td class="texto-truncado" title="${posto.local || ''}">${posto.local || '—'}</td>
         <td class="suave">${posto.cargaHoraria || '—'}</td>
         <td>${posto.servico || '—'}</td>
-        <td class="suave">${posto.cre || '—'}</td>
-        <td class="suave">${posto.lote || '—'}</td>
+        <td class="suave texto-truncado-curto" title="${posto.cre || ''}">${posto.cre || '—'}</td>
         <td class="numero">${posto.numeroContrato || '—'}</td>
         <td>${seloStatus}</td>`;
       corpoTabelaRelatorio.appendChild(linha);
     });
   }
 
-  [filtroRelatorioServico, filtroRelatorioStatus].forEach(select => select.addEventListener('change', renderizarRelatorioPostos));
-  [filtroRelatorioCre, filtroRelatorioLote, filtroRelatorioMunicipio].forEach(input => input.addEventListener('input', renderizarRelatorioPostos));
+  [filtroRelatorioServico, filtroRelatorioStatus, filtroRelatorioConta, filtroRelatorioMotivo].forEach(select => select.addEventListener('change', renderizarRelatorioPostos));
+  [filtroRelatorioCre, filtroRelatorioMunicipio].forEach(input => input.addEventListener('input', renderizarRelatorioPostos));
   
   botaoLimparFiltrosRelatorio.addEventListener('click', () => {
     filtroRelatorioCre.value = '';
-    filtroRelatorioLote.value = '';
+    filtroRelatorioConta.value = '';
+    filtroRelatorioMotivo.value = '';
     filtroRelatorioMunicipio.value = '';
     filtroRelatorioServico.value = '';
     filtroRelatorioStatus.value = '';
@@ -1479,7 +1516,6 @@
       'Carga Horária': p.cargaHoraria || '',
       'Serviço': p.servico || '',
       'CRE': p.cre || '',
-      'Lote': p.lote || '',
       'Nº Contrato': p.numeroContrato || '',
       'Status': rotulosStatusPosto[p.status] || ''
     }));
@@ -1510,7 +1546,8 @@
 
     const filtrosAtivos = [];
     if (filtroRelatorioCre.value) filtrosAtivos.push(`CRE: ${filtroRelatorioCre.value}`);
-    if (filtroRelatorioLote.value) filtrosAtivos.push(`Lote: ${filtroRelatorioLote.value}`);
+    if (filtroRelatorioConta.value) filtrosAtivos.push(`C. Vinculada: ${filtroRelatorioConta.options[filtroRelatorioConta.selectedIndex].text}`);
+    if (filtroRelatorioMotivo.value) filtrosAtivos.push(`Tipo Dispensa: ${filtroRelatorioMotivo.options[filtroRelatorioMotivo.selectedIndex].text}`);
     if (filtroRelatorioMunicipio.value) filtrosAtivos.push(`Município: ${filtroRelatorioMunicipio.value}`);
     if (filtroRelatorioServico.value) filtrosAtivos.push(`Serviço: ${filtroRelatorioServico.value}`);
     if (filtroRelatorioStatus.value) filtrosAtivos.push(`Status: ${rotulosStatusPosto[filtroRelatorioStatus.value]}`);
