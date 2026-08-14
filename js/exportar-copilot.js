@@ -7,6 +7,9 @@ async function exportarDadosCopilot() {
   }
 
   try {
+    // Importa dinamicamente a instância do Supabase
+    const { supabase } = await import('./supabase.js');
+
     const btn = document.getElementById('btn-exportar-copilot');
     if (btn) {
       btn.innerHTML = '<span>⏳ Gerando Excel...</span>';
@@ -14,19 +17,19 @@ async function exportarDadosCopilot() {
     }
 
     // 1. Buscar Empresas
-    const { data: empresas, error: errEmp } = await supabaseClient
+    const { data: empresas, error: errEmp } = await supabase
       .from('empresas')
       .select('*');
     if (errEmp) throw errEmp;
 
     // 2. Buscar Contratos
-    const { data: contratos, error: errContr } = await supabaseClient
+    const { data: contratos, error: errContr } = await supabase
       .from('contratos')
       .select('*');
     if (errContr) throw errContr;
 
     // 3. Buscar Postos
-    const { data: postos, error: errPostos } = await supabaseClient
+    const { data: postos, error: errPostos } = await supabase
       .from('postos')
       .select('*');
     if (errPostos) throw errPostos;
