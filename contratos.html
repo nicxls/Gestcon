@@ -553,7 +553,7 @@
   <header class="barra-superior">
     <div class="usuario-logado-topo">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <span id="matricula-usuario-topo">Matrícula: —</span>
+      <span id="nome-usuario-topo">—</span>
     </div>
     <button type="button" class="botao-sair-topo" onclick="deslogar()">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
@@ -941,8 +941,8 @@
     usuarioEhAdministrador = usuarioLogado.papel === 'administrador' || usuarioLogado.papel === 'master';
     usuarioEhMaster = usuarioLogado.papel === 'master';
 
-    const rotuloMatriculaTopo = document.getElementById('matricula-usuario-topo');
-    if (rotuloMatriculaTopo) rotuloMatriculaTopo.textContent = 'Matrícula: ' + usuarioLogado.matricula;
+    const rotuloNomeTopo = document.getElementById('nome-usuario-topo');
+    if (rotuloNomeTopo) rotuloNomeTopo.textContent = usuarioLogado.nome_completo || usuarioLogado.email;
 
     const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
     if (usuarioEhMaster) {

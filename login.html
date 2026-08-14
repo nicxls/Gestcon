@@ -487,12 +487,12 @@
           </div>
 
           <div class="campo">
-            <label for="solicitar-matricula">Matrícula</label>
+            <label for="solicitar-nome">Nome Completo</label>
             <div class="campo-entrada">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h6"/><circle cx="8.5" cy="16.2" r="0.4" fill="currentColor" stroke="none"/></svg>
-              <input type="text" id="solicitar-matricula" name="matricula" placeholder="Número de matrícula" inputmode="numeric">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              <input type="text" id="solicitar-nome" name="nome_completo" placeholder="Seu nome completo">
             </div>
-            <div class="mensagem-erro" id="erro-solicitar-matricula">Informe sua matrícula.</div>
+            <div class="mensagem-erro" id="erro-solicitar-nome">Informe seu nome completo.</div>
           </div>
 
           <div class="campo">
@@ -691,7 +691,7 @@
   const etapaConfirmacao = document.getElementById('etapa-confirmacao');
   const formSolicitar = document.getElementById('form-solicitar');
   const campoEmailSolicitar = document.getElementById('solicitar-email');
-  const campoMatriculaSolicitar = document.getElementById('solicitar-matricula');
+  const campoNomeSolicitar = document.getElementById('solicitar-nome');
   const campoSenhaSolicitar = document.getElementById('solicitar-senha');
 
   window.abrirModalSolicitar = function() {
@@ -708,8 +708,8 @@
   }
 
   function limparErrosSolicitar() {
-    [campoEmailSolicitar, campoMatriculaSolicitar, campoSenhaSolicitar].forEach(c => c.classList.remove('invalido'));
-    ['erro-solicitar-email', 'erro-solicitar-matricula', 'erro-solicitar-senha'].forEach(id => {
+    [campoEmailSolicitar, campoNomeSolicitar, campoSenhaSolicitar].forEach(c => c.classList.remove('invalido'));
+    ['erro-solicitar-email', 'erro-solicitar-nome', 'erro-solicitar-senha'].forEach(id => {
       document.getElementById(id).classList.remove('visivel');
     });
   }
@@ -726,9 +726,9 @@
       document.getElementById('erro-solicitar-email').classList.add('visivel');
       valido = false;
     }
-    if (!campoMatriculaSolicitar.value.trim()) {
-      campoMatriculaSolicitar.classList.add('invalido');
-      document.getElementById('erro-solicitar-matricula').classList.add('visivel');
+    if (!campoNomeSolicitar.value.trim()) {
+      campoNomeSolicitar.classList.add('invalido');
+      document.getElementById('erro-solicitar-nome').classList.add('visivel');
       valido = false;
     }
     if (campoSenhaSolicitar.value.length < 6) {
@@ -739,7 +739,7 @@
 
     if (!valido) return;
 
-    const matricula = campoMatriculaSolicitar.value.trim();
+    const nomeCompleto = campoNomeSolicitar.value.trim();
     const emailReal = campoEmailSolicitar.value.trim();
     
     const botaoSalvar = formSolicitar.querySelector('.botao-salvar');
@@ -764,7 +764,7 @@
     const { error: perfilError } = await supabase.from('perfis').insert([{
       id: authData.user.id,
       email: emailReal,
-      matricula: matricula,
+      nome_completo: nomeCompleto,
       papel: 'leitor', // começa como leitor
       aprovado: false  // pendente de aprovação
     }]);
