@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estabelecimentos — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tema.css">
+<script src="js/tema.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+  if (sessionStorage.getItem('gestcon_papel') === 'master') {
+    document.documentElement.classList.add('papel-master');
+  }
+</script>
+<style>
+  *{ box-sizing: border-box; }
+  body{ margin:0; font-family:'Public Sans',system-ui,sans-serif; background:var(--bg); color:var(--texto); display:flex; flex-direction:column; min-height:100vh; }
+
+  .faixa-estado{ height:6px; width:100%; background:linear-gradient(90deg,#00512E 0 33.33%,#B7212B 33.33% 66.66%,#E3A63E 66.66% 100%); flex-shrink:0; }
+  .layout{ flex:1; display:flex; min-height:0; }
+
+  /* Menu */
+  .menu-lateral{ width:240px; flex-shrink:0; background:var(--verde-mais-escuro); color:#fff; display:flex; flex-direction:column; padding:20px 0; }
+  .menu-lateral .marca{ padding:0 20px 20px; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:12px; text-align:center; }
+  .menu-lateral .marca .brasao{ width:40px; height:40px; margin-bottom:8px; }
+  .menu-lateral .marca .nome-sistema{ font-size:15px; font-weight:700; }
+  .menu-lateral .marca .subtitulo{ font-size:11.5px; color:rgba(255,255,255,0.6); margin-top:2px; }
+  .menu-lateral nav{ display:flex; flex-direction:column; gap:2px; padding:0 10px; }
+  .item-menu{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:7px; color:rgba(255,255,255,0.75); text-decoration:none; font-size:13.5px; font-weight:500; cursor:pointer; transition:background .12s ease,color .12s ease; }
+  .item-menu:hover{ background:rgba(255,255,255,0.06); color:#fff; }
+  .item-menu.ativo{ background:var(--verde); color:#fff; }
+  .link-usuarios{ display:none; }
+  html.papel-master .link-usuarios{ display:flex; }
+  .item-menu svg{ width:17px; height:17px; flex-shrink:0; stroke:currentColor; }
+
+  /* Barra superior */
+  .area-conteudo{ flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .barra-superior{ display:flex; align-items:center; justify-content:flex-end; gap:14px; padding:12px 36px; background:var(--card-bg); border-bottom:1px solid var(--linha); flex-shrink:0; }
+  .usuario-logado-topo{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--texto); }
+  .usuario-logado-topo svg{ width:16px; height:16px; stroke:var(--texto-suave); flex-shrink:0; }
+  .botao-sair-topo{ display:flex; align-items:center; gap:6px; background:none; border:1px solid var(--linha); padding:7px 14px; border-radius:7px; font-size:12.5px; font-weight:700; color:var(--texto); cursor:pointer; transition:background .15s ease,border-color .15s ease,color .15s ease; }
+  .botao-sair-topo svg{ width:14px; height:14px; stroke:currentColor; flex-shrink:0; }
+  .botao-sair-topo:hover{ background:var(--erro-bg,#FBECEB); border-color:var(--erro,#B3261E); color:var(--erro,#B3261E); }
+
+  /* Main */
+  main{ flex:1; padding:32px 36px; min-width:0; overflow-y:auto; }
+  .cabecalho-pagina{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; gap:16px; flex-wrap:wrap; }
+  .cabecalho-pagina h1{ font-size:21px; font-weight:700; margin:0 0 3px; color:var(--texto); }
+  .cabecalho-pagina p{ font-size:13.5px; color:var(--texto-suave); margin:0; }
+
+  .botao-primario{ display:flex; align-items:center; gap:7px; background:var(--verde); color:#fff; border:none; padding:10px 18px; border-radius:8px; font-size:13.5px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background .15s ease; }
+  .botao-primario:hover{ background:var(--verde-escuro); }
+  .botao-secundario{ display:flex; align-items:center; gap:7px; background:var(--card-bg); color:var(--texto); border:1px solid var(--linha); padding:10px 16px; border-radius:8px; font-size:13.5px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background .15s ease,border-color .15s ease; }
+  .botao-secundario:hover{ background:var(--hover-row); border-color:var(--texto-suave); }
+  .grupo-acoes-topo{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* Filtros */
+  .cartao-filtros{ background:var(--card-bg); border:1px solid var(--linha); border-radius:10px; padding:16px 20px; margin-bottom:16px; display:grid; grid-template-columns:repeat(5,1fr); gap:14px; align-items:end; }
+  .campo-filtro label{ display:block; font-size:11.5px; font-weight:700; color:var(--texto-suave); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:6px; }
+  .campo-filtro select,.campo-filtro input{ width:100%; padding:9px 10px; border:1px solid var(--linha); border-radius:8px; font-size:13.5px; font-family:inherit; color:var(--texto); background:var(--input-bg); }
+  .campo-filtro select:focus,.campo-filtro input:focus{ outline:none; border-color:var(--verde); box-shadow:0 0 0 3px rgba(0,81,46,0.14); background:var(--card-bg); }
+  .botao-limpar-filtros{ grid-column:1/-1; justify-self:start; background:none; border:none; color:var(--verde); font-size:12.5px; font-weight:700; cursor:pointer; padding:2px 0; }
+  .botao-limpar-filtros:hover{ text-decoration:underline; }
+
+  /* Tabela */
+  .cartao-tabela{ background:var(--card-bg); border:1px solid var(--linha); border-radius:10px; overflow:hidden; }
+  .tabela-scroll{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; min-width:880px; }
+  thead th{ text-align:left; font-size:12px; font-weight:700; color:var(--texto-suave); text-transform:uppercase; letter-spacing:0.04em; padding:13px 20px; border-bottom:1px solid var(--linha); background:var(--thead-bg); white-space:nowrap; }
+  tbody td{ padding:14px 20px; font-size:14px; border-bottom:1px solid var(--linha); color:#1B2430; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:var(--hover-row); }
+  td.numero{ font-weight:600; }
+  td.suave{ color:var(--texto-suave); }
+  .texto-truncado{ max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .estado-vazio{ padding:48px 20px; text-align:center; color:var(--texto-suave); font-size:14px; }
+  .acoes-linha{ display:flex; gap:8px; }
+  .botao-icone{ border:1px solid var(--linha); background:var(--card-bg); border-radius:6px; padding:5px 9px; font-size:12px; color:var(--texto-suave); cursor:pointer; display:flex; align-items:center; gap:4px; }
+  .botao-icone:hover{ border-color:var(--verde); color:var(--verde); }
+  .botao-icone.perigo:hover{ border-color:var(--erro,#B3261E); color:var(--erro,#B3261E); }
+  .botao-icone svg{ width:13px; height:13px; stroke:currentColor; }
+
+  /* Badges */
+  .selo-tipo{ display:inline-block; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700; }
+  .selo-tipo.sim{ background:#E8F1EC; color:var(--verde); }
+  .selo-tipo.nao{ background:#EEF0F2; color:var(--texto-suave); }
+
+  /* Modal */
+  .sobreposicao{ display:none; position:fixed; inset:0; background:rgba(15,25,35,0.45); align-items:center; justify-content:center; padding:20px; z-index:10; overflow-y:auto; }
+  .sobreposicao.aberta{ display:flex; }
+  .modal-cartao{ width:100%; max-width:660px; background:var(--card-bg); border-radius:10px; padding:28px 30px 26px; margin:auto; max-height:90vh; overflow-y:auto; }
+  .modal-cartao h2{ font-size:17px; font-weight:700; margin:0 0 4px; }
+  .modal-cartao p.instrucao{ font-size:13px; color:var(--texto-suave); margin:0 0 20px; }
+  .grade-formulario{ display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; }
+  .campo{ margin-bottom:16px; }
+  .campo.largura-total{ grid-column:1/-1; }
+  .campo label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .campo input,.campo select,.campo textarea{ width:100%; padding:10px 12px; border:1px solid var(--linha); border-radius:8px; font-size:14px; font-family:inherit; color:var(--texto); background:var(--input-bg); }
+  .campo input:focus,.campo select:focus,.campo textarea:focus{ outline:none; border-color:var(--verde); box-shadow:0 0 0 3px rgba(0,81,46,0.14); background:var(--card-bg); }
+  .campo input.invalido,.campo select.invalido{ border-color:var(--erro); background:var(--erro-bg); }
+  .mensagem-erro{ display:none; font-size:12px; color:var(--erro); margin-top:5px; }
+  .mensagem-erro.visivel{ display:block; }
+  .acoes-modal{ display:flex; gap:10px; margin-top:8px; }
+  .botao{ flex:1; padding:10px 16px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; border:none; }
+  .botao-salvar{ background:var(--verde); color:#fff; }
+  .botao-salvar:hover{ background:var(--verde-escuro); }
+  .botao-cancelar{ background:var(--card-bg); color:var(--texto); border:1px solid var(--linha); }
+  .botao-cancelar:hover{ border-color:var(--texto-suave); }
+
+  @media (max-width:1000px){ .cartao-filtros{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:720px){ .menu-lateral{ width:64px; } .menu-lateral .marca .nome-sistema,.menu-lateral .marca .subtitulo,.item-menu span{ display:none; } .item-menu{ justify-content:center; } main{ padding:24px 16px; } }
+  @media (max-width:560px){ .grade-formulario{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<div class="faixa-estado"></div>
+<div class="layout">
+
+<aside class="menu-lateral">
+  <div class="marca">
+    <svg class="brasao" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Brasão">
+      <circle cx="50" cy="50" r="47" fill="#FFFFFF" stroke="#00512E" stroke-width="3"/>
+      <path d="M50 3 A47 47 0 0 1 50 97 Z" fill="#B7212B" opacity="0.9"/>
+      <path d="M50 3 A47 47 0 0 0 50 97 Z" fill="#00512E" opacity="0.9"/>
+      <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
+      <text x="50" y="58" text-anchor="middle" font-family="Public Sans,sans-serif" font-weight="800" font-size="26" fill="#00512E">RS</text>
+      <circle cx="50" cy="50" r="47" fill="none" stroke="#E3A63E" stroke-width="2"/>
+    </svg>
+    <div class="nome-sistema">GestCon</div>
+    <div class="subtitulo">Sistema de Gestão</div>
+  </div>
+  <nav>
+    <a class="item-menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>
+      <span>Início</span>
+    </a>
+    <a class="item-menu" href="cadastro-empresa.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      <span>Empresas</span>
+    </a>
+    <a class="item-menu" href="contratos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h6"/><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+      <span>Contratos</span>
+    </a>
+    <a class="item-menu ativo" href="estabelecimentos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      <span>Estabelecimentos</span>
+    </a>
+    <a class="item-menu" href="postos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
+      <span>Postos</span>
+    </a>
+    <a class="item-menu" href="vigencia.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+      <span>Vigência</span>
+    </a>
+    <a class="item-menu link-usuarios" href="usuarios.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Usuários</span>
+    </a>
+    <a class="item-menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.04z"/></svg>
+      <span>Configurações</span>
+    </a>
+  </nav>
+</aside>
+
+<div class="area-conteudo">
+<header class="barra-superior">
+  <div class="usuario-logado-topo">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span id="nome-usuario-topo">—</span>
+  </div>
+  <button type="button" class="botao-tema" onclick="toggleTema()" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+    <svg class="icone-lua" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <svg class="icone-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+  <button type="button" class="botao-sair-topo" onclick="deslogar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    Sair
+  </button>
+</header>
+
+<main>
+  <div class="cabecalho-pagina">
+    <div>
+      <h1>Estabelecimentos</h1>
+      <p>Cadastre e gerencie os estabelecimentos vinculados aos contratos.</p>
+    </div>
+    <div class="grupo-acoes-topo">
+      <button class="botao-secundario" onclick="exportarExcel()" title="Exportar para Excel">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 6 6M15 15l-6 6"/></svg>
+        Exportar Excel
+      </button>
+      <button class="botao-primario" id="botao-cadastrar" onclick="abrirModal()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Cadastrar Estabelecimento
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="cartao-filtros">
+    <div class="campo-filtro">
+      <label for="filtro-cre">CRE</label>
+      <input type="text" id="filtro-cre" placeholder="Digite para filtrar" autocomplete="off">
+    </div>
+    <div class="campo-filtro">
+      <label for="filtro-idt">IDT</label>
+      <input type="text" id="filtro-idt" placeholder="Digite para filtrar" autocomplete="off">
+    </div>
+    <div class="campo-filtro">
+      <label for="filtro-nome">Estabelecimento</label>
+      <input type="text" id="filtro-nome" placeholder="Digite para filtrar" autocomplete="off">
+    </div>
+    <div class="campo-filtro">
+      <label for="filtro-municipio">Município</label>
+      <input type="text" id="filtro-municipio" placeholder="Digite para filtrar" autocomplete="off">
+    </div>
+    <div class="campo-filtro">
+      <label for="filtro-tipo">Tipo</label>
+      <select id="filtro-tipo">
+        <option value="">Todos</option>
+        <option value="Escola Regular">Escola Regular</option>
+        <option value="Escola Indígena">Escola Indígena</option>
+        <option value="Escola Fase">Escola Fase</option>
+        <option value="Escola Prisional">Escola Prisional</option>
+        <option value="Escola Especial">Escola Especial</option>
+        <option value="Escola Agrícola">Escola Agrícola</option>
+      </select>
+    </div>
+    <div class="campo-filtro">
+      <label for="filtro-tempo-integral">Tempo Integral</label>
+      <select id="filtro-tempo-integral">
+        <option value="">Todos</option>
+        <option value="true">Sim</option>
+        <option value="false">Não</option>
+      </select>
+    </div>
+    <button type="button" class="botao-limpar-filtros" id="botao-limpar-filtros">Limpar filtros</button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="cartao-tabela">
+    <div class="tabela-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Estabelecimento</th>
+            <th>CRE</th>
+            <th>IDT</th>
+            <th>Município</th>
+            <th>Tipo</th>
+            <th>Tempo Integral</th>
+            <th style="width:130px">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="corpo-tabela"></tbody>
+      </table>
+    </div>
+    <div class="estado-vazio" id="estado-vazio" style="display:none">Nenhum estabelecimento cadastrado ainda.</div>
+  </div>
+</main>
+</div>
+</div>
+
+<!-- Modal Cadastro / Edição -->
+<div class="sobreposicao" id="sobreposicao">
+  <div class="modal-cartao">
+    <h2 id="titulo-modal">Cadastrar Estabelecimento</h2>
+    <p class="instrucao">Preencha os dados do estabelecimento. Campos marcados com * são obrigatórios.</p>
+
+    <form id="form-estabelecimento" novalidate>
+      <div class="grade-formulario">
+
+        <div class="campo largura-total">
+          <label for="campo-nome">Estabelecimento *</label>
+          <input type="text" id="campo-nome" placeholder="Nome do estabelecimento">
+          <div class="mensagem-erro" id="erro-nome">Informe o nome do estabelecimento.</div>
+        </div>
+
+        <div class="campo">
+          <label for="campo-cre">CRE</label>
+          <input type="text" id="campo-cre" placeholder="Ex.: CRE Metropolitana">
+        </div>
+
+        <div class="campo">
+          <label for="campo-idt">IDT</label>
+          <input type="text" id="campo-idt" placeholder="Ex.: 42001234">
+        </div>
+
+        <div class="campo largura-total">
+          <label for="campo-endereco">Endereço</label>
+          <input type="text" id="campo-endereco" placeholder="Rua, número, bairro">
+        </div>
+
+        <div class="campo">
+          <label for="campo-municipio">Município</label>
+          <input type="text" id="campo-municipio" placeholder="Ex.: Porto Alegre">
+        </div>
+
+        <div class="campo">
+          <label for="campo-tipo">Tipo *</label>
+          <select id="campo-tipo">
+            <option value="">Selecione...</option>
+            <option value="Escola Regular">Escola Regular</option>
+            <option value="Escola Indígena">Escola Indígena</option>
+            <option value="Escola Fase">Escola Fase</option>
+            <option value="Escola Prisional">Escola Prisional</option>
+            <option value="Escola Especial">Escola Especial</option>
+            <option value="Escola Agrícola">Escola Agrícola</option>
+          </select>
+          <div class="mensagem-erro" id="erro-tipo">Selecione o tipo.</div>
+        </div>
+
+        <div class="campo largura-total">
+          <label for="campo-tempo-integral">Tempo Integral</label>
+          <select id="campo-tempo-integral">
+            <option value="false">Não</option>
+            <option value="true">Sim</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="acoes-modal">
+        <button type="button" class="botao botao-cancelar" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="botao botao-salvar" id="botao-salvar">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, obterPerfilLogado, fazerLogout } from './js/supabase.js';
+
+  window.deslogar = fazerLogout;
+
+  let usuarioLogado = null;
+  let usuarioEhAdministrador = false;
+  let estabelecimentos = [];
+  let idEmEdicao = null;
+
+  const corpoTabela    = document.getElementById('corpo-tabela');
+  const estadoVazio    = document.getElementById('estado-vazio');
+  const sobreposicao   = document.getElementById('sobreposicao');
+  const form           = document.getElementById('form-estabelecimento');
+  const botaoSalvar    = document.getElementById('botao-salvar');
+
+  // Filtros
+  const filtroCre           = document.getElementById('filtro-cre');
+  const filtroIdt           = document.getElementById('filtro-idt');
+  const filtroNome          = document.getElementById('filtro-nome');
+  const filtroMunicipio     = document.getElementById('filtro-municipio');
+  const filtroTipo          = document.getElementById('filtro-tipo');
+  const filtroTempoIntegral = document.getElementById('filtro-tempo-integral');
+
+  // Campos do formulário
+  const campoNome          = document.getElementById('campo-nome');
+  const campoCre           = document.getElementById('campo-cre');
+  const campoIdt           = document.getElementById('campo-idt');
+  const campoEndereco      = document.getElementById('campo-endereco');
+  const campoMunicipio     = document.getElementById('campo-municipio');
+  const campoTipo          = document.getElementById('campo-tipo');
+  const campoTempoIntegral = document.getElementById('campo-tempo-integral');
+
+  // ==========================================
+  // INICIALIZAÇÃO
+  // ==========================================
+  async function inicializar() {
+    const papelCache = sessionStorage.getItem('gestcon_papel');
+    if (papelCache === 'master') {
+      const linkUsuariosCache = document.querySelector('a.item-menu[href="usuarios.html"]');
+      if (linkUsuariosCache) linkUsuariosCache.style.display = '';
+    }
+
+    usuarioLogado = await obterPerfilLogado();
+    if (!usuarioLogado || !usuarioLogado.aprovado) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    usuarioEhAdministrador = usuarioLogado.papel === 'administrador' || usuarioLogado.papel === 'master';
+
+    const rotuloNomeTopo = document.getElementById('nome-usuario-topo');
+    if (rotuloNomeTopo) rotuloNomeTopo.textContent = usuarioLogado.nome_completo || usuarioLogado.email;
+
+    const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+    if (usuarioLogado.papel === 'master') {
+      if (linkUsuarios) linkUsuarios.style.display = '';
+    } else {
+      if (linkUsuarios) linkUsuarios.remove();
+    }
+
+    if (!usuarioEhAdministrador) {
+      const botaoCadastrar = document.getElementById('botao-cadastrar');
+      if (botaoCadastrar) botaoCadastrar.style.display = 'none';
+    }
+
+    await carregarEstabelecimentos();
+  }
+
+  // ==========================================
+  // CARREGAMENTO
+  // ==========================================
+  async function carregarEstabelecimentos() {
+    const { data, error } = await supabase
+      .from('estabelecimentos')
+      .select('*')
+      .order('estabelecimento', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao carregar estabelecimentos:', error);
+      return;
+    }
+
+    estabelecimentos = data || [];
+    renderizarTabela();
+  }
+
+  // ==========================================
+  // FILTROS
+  // ==========================================
+  function contemTexto(valor, filtro) {
+    if (!filtro) return true;
+    return (valor || '').toLowerCase().includes(filtro.toLowerCase().trim());
+  }
+
+  function estabelecimentosFiltrados() {
+    return estabelecimentos.filter(e =>
+      contemTexto(e.cre, filtroCre.value) &&
+      contemTexto(e.idt, filtroIdt.value) &&
+      contemTexto(e.estabelecimento, filtroNome.value) &&
+      contemTexto(e.municipio, filtroMunicipio.value) &&
+      (!filtroTipo.value || e.tipo === filtroTipo.value) &&
+      (filtroTempoIntegral.value === '' || String(e.tempo_integral) === filtroTempoIntegral.value)
+    );
+  }
+
+  [filtroTipo, filtroTempoIntegral].forEach(s => s.addEventListener('change', renderizarTabela));
+  [filtroCre, filtroIdt, filtroNome, filtroMunicipio].forEach(i => i.addEventListener('input', renderizarTabela));
+
+  document.getElementById('botao-limpar-filtros').addEventListener('click', () => {
+    filtroCre.value = ''; filtroIdt.value = ''; filtroNome.value = '';
+    filtroMunicipio.value = ''; filtroTipo.value = ''; filtroTempoIntegral.value = '';
+    renderizarTabela();
+  });
+
+  // ==========================================
+  // RENDERIZAÇÃO
+  // ==========================================
+  function renderizarTabela() {
+    corpoTabela.innerHTML = '';
+    const lista = estabelecimentosFiltrados();
+
+    estadoVazio.style.display = lista.length ? 'none' : 'block';
+    estadoVazio.textContent = estabelecimentos.length
+      ? 'Nenhum estabelecimento encontrado para os filtros selecionados.'
+      : 'Nenhum estabelecimento cadastrado ainda.';
+
+    lista.forEach(e => {
+      const tr = document.createElement('tr');
+      const seloTI = e.tempo_integral
+        ? '<span class="selo-tipo sim">Sim</span>'
+        : '<span class="selo-tipo nao">Não</span>';
+
+      const acoesEdicao = usuarioEhAdministrador ? `
+        <button class="botao-icone" onclick="editarEstabelecimento('${e.id}')" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+        </button>
+        <button class="botao-icone perigo" onclick="excluirEstabelecimento('${e.id}','${(e.estabelecimento||'').replace(/'/g,"\\'")} ')" title="Excluir">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>` : '';
+
+      tr.innerHTML = `
+        <td class="numero texto-truncado" title="${e.estabelecimento || ''}">${e.estabelecimento || '—'}</td>
+        <td class="suave">${e.cre || '—'}</td>
+        <td class="suave">${e.idt || '—'}</td>
+        <td>${e.municipio || '—'}</td>
+        <td>${e.tipo || '—'}</td>
+        <td>${seloTI}</td>
+        <td><div class="acoes-linha">${acoesEdicao}</div></td>`;
+      corpoTabela.appendChild(tr);
+    });
+  }
+
+  // ==========================================
+  // MODAL — ABRIR / FECHAR
+  // ==========================================
+  window.abrirModal = function() {
+    if (!usuarioEhAdministrador) return;
+    idEmEdicao = null;
+    document.getElementById('titulo-modal').textContent = 'Cadastrar Estabelecimento';
+    form.reset();
+    limparErros();
+    sobreposicao.classList.add('aberta');
+    campoNome.focus();
+  };
+
+  window.fecharModal = function() {
+    sobreposicao.classList.remove('aberta');
+    idEmEdicao = null;
+    form.reset();
+    limparErros();
+  };
+
+  window.editarEstabelecimento = function(id) {
+    const e = estabelecimentos.find(x => x.id === id);
+    if (!e) return;
+    idEmEdicao = id;
+    document.getElementById('titulo-modal').textContent = 'Editar Estabelecimento';
+    campoNome.value          = e.estabelecimento || '';
+    campoCre.value           = e.cre || '';
+    campoIdt.value           = e.idt || '';
+    campoEndereco.value      = e.endereco || '';
+    campoMunicipio.value     = e.municipio || '';
+    campoTipo.value          = e.tipo || '';
+    campoTempoIntegral.value = String(e.tempo_integral ?? false);
+    limparErros();
+    sobreposicao.classList.add('aberta');
+  };
+
+  // Fechar ao clicar fora
+  sobreposicao.addEventListener('click', e => { if (e.target === sobreposicao) fecharModal(); });
+
+  // ==========================================
+  // VALIDAÇÃO
+  // ==========================================
+  function limparErros() {
+    document.querySelectorAll('.mensagem-erro').forEach(el => el.classList.remove('visivel'));
+    document.querySelectorAll('.invalido').forEach(el => el.classList.remove('invalido'));
+  }
+
+  function validar() {
+    limparErros();
+    let valido = true;
+    if (!campoNome.value.trim()) {
+      campoNome.classList.add('invalido');
+      document.getElementById('erro-nome').classList.add('visivel');
+      valido = false;
+    }
+    if (!campoTipo.value) {
+      campoTipo.classList.add('invalido');
+      document.getElementById('erro-tipo').classList.add('visivel');
+      valido = false;
+    }
+    return valido;
+  }
+
+  // ==========================================
+  // SALVAR
+  // ==========================================
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    if (!validar()) return;
+
+    const textoOriginal = botaoSalvar.textContent;
+    botaoSalvar.textContent = 'Salvando...';
+    botaoSalvar.disabled = true;
+
+    const dados = {
+      estabelecimento:  campoNome.value.trim(),
+      cre:              campoCre.value.trim() || null,
+      idt:              campoIdt.value.trim() || null,
+      endereco:         campoEndereco.value.trim() || null,
+      municipio:        campoMunicipio.value.trim() || null,
+      tipo:             campoTipo.value || null,
+      tempo_integral:   campoTempoIntegral.value === 'true'
+    };
+
+    let error;
+    if (idEmEdicao) {
+      ({ error } = await supabase.from('estabelecimentos').update(dados).eq('id', idEmEdicao));
+    } else {
+      ({ error } = await supabase.from('estabelecimentos').insert([dados]));
+    }
+
+    botaoSalvar.textContent = textoOriginal;
+    botaoSalvar.disabled = false;
+
+    if (error) {
+      alert('Erro ao salvar: ' + error.message);
+      return;
+    }
+
+    fecharModal();
+    await carregarEstabelecimentos();
+  });
+
+  // ==========================================
+  // EXCLUIR
+  // ==========================================
+  window.excluirEstabelecimento = async function(id, nome) {
+    if (!confirm(`Excluir o estabelecimento "${nome.trim()}"? Esta ação não pode ser desfeita.`)) return;
+    const { error } = await supabase.from('estabelecimentos').delete().eq('id', id);
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+    await carregarEstabelecimentos();
+  };
+
+  // ==========================================
+  // EXPORTAÇÃO EXCEL
+  // ==========================================
+  window.exportarExcel = function() {
+    const lista = estabelecimentosFiltrados();
+    if (!lista.length) { alert('Não há dados para exportar.'); return; }
+    const dados = lista.map(e => ({
+      'Estabelecimento': e.estabelecimento || '',
+      'CRE': e.cre || '',
+      'IDT': e.idt || '',
+      'Endereço': e.endereco || '',
+      'Município': e.municipio || '',
+      'Tipo': e.tipo || '',
+      'Tempo Integral': e.tempo_integral ? 'Sim' : 'Não'
+    }));
+    const planilha = XLSX.utils.json_to_sheet(dados);
+    planilha['!cols'] = Object.keys(dados[0]).map(k => ({ wch: Math.max(k.length, ...dados.map(l => String(l[k]).length)) + 2 }));
+    const livro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(livro, planilha, 'Estabelecimentos');
+    XLSX.writeFile(livro, `estabelecimentos_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  inicializar();
+</script>
+
+</body>
+</html>
