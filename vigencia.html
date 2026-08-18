@@ -416,6 +416,14 @@
           <option value="licitacao">Licitação</option>
         </select>
       </div>
+      <div class="campo-filtro">
+        <label for="filtro-vig-processo">Processo Contratação</label>
+        <input type="text" id="filtro-vig-processo" placeholder="Digite para filtrar" autocomplete="off">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-vig-numero">Nº Contrato</label>
+        <input type="text" id="filtro-vig-numero" placeholder="Digite para filtrar" autocomplete="off">
+      </div>
       <button type="button" class="botao-limpar-filtros" id="botao-limpar-vig">Limpar filtros</button>
     </div>
 
@@ -458,6 +466,8 @@
   const filtroServico  = document.getElementById('filtro-vig-servico');
   const filtroSituacao = document.getElementById('filtro-vig-situacao');
   const filtroTipo     = document.getElementById('filtro-vig-tipo');
+  const filtroProcesso = document.getElementById('filtro-vig-processo');
+  const filtroNumero   = document.getElementById('filtro-vig-numero');
 
   // ==========================================
   // INICIALIZAÇÃO
@@ -573,12 +583,14 @@
       contemTexto(c.empresa_nome, filtroEmpresa.value) &&
       (!filtroServico.value  || c.servico === filtroServico.value) &&
       (!filtroSituacao.value || c.status_vigencia === filtroSituacao.value) &&
-      (!filtroTipo.value     || c.tipo_contrato === filtroTipo.value)
+      (!filtroTipo.value     || c.tipo_contrato === filtroTipo.value) &&
+      contemTexto(c.processo_contratacao, filtroProcesso.value) &&
+      contemTexto(c.numero_contrato, filtroNumero.value)
     );
   }
 
   [filtroServico, filtroSituacao, filtroTipo].forEach(s => s.addEventListener('change', renderizar));
-  [filtroCre, filtroEmpresa].forEach(i => i.addEventListener('input', renderizar));
+  [filtroCre, filtroEmpresa, filtroProcesso, filtroNumero].forEach(i => i.addEventListener('input', renderizar));
 
   document.getElementById('botao-limpar-vig').addEventListener('click', () => {
     filtroCre.value = '';
@@ -586,6 +598,8 @@
     filtroServico.value = '';
     filtroSituacao.value = '';
     filtroTipo.value = '';
+    filtroProcesso.value = '';
+    filtroNumero.value = '';
     renderizar();
   });
 

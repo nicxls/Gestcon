@@ -851,6 +851,14 @@
           <option value="remanescente">Remanescente</option>
         </select>
       </div>
+      <div class="campo-filtro">
+        <label for="filtro-processo">Processo Contratação</label>
+        <input type="text" id="filtro-processo" placeholder="Digite para filtrar" autocomplete="off">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-numero-contrato">Nº Contrato</label>
+        <input type="text" id="filtro-numero-contrato" placeholder="Digite para filtrar" autocomplete="off">
+      </div>
       <button type="button" class="botao-limpar-filtros" id="botao-limpar-filtros">Limpar filtros</button>
     </div>
 
@@ -1069,6 +1077,8 @@
   const filtroTipo = document.getElementById('filtro-tipo');
   const filtroContaVinculada = document.getElementById('filtro-conta-vinculada');
   const filtroMotivo = document.getElementById('filtro-motivo');
+  const filtroProcesso = document.getElementById('filtro-processo');
+  const filtroNumeroContrato = document.getElementById('filtro-numero-contrato');
   const botaoLimparFiltros = document.getElementById('botao-limpar-filtros');
 
   // Relatório de Postos
@@ -1194,12 +1204,14 @@
       (!filtroServico.value || c.servico === filtroServico.value) &&
       (!filtroTipo.value || c.tipo_contrato === filtroTipo.value) &&
       (!filtroContaVinculada.value || c.conta_vinculada === filtroContaVinculada.value) &&
-      (!filtroMotivo.value || c.motivo_dispensa === filtroMotivo.value)
+      (!filtroMotivo.value || c.motivo_dispensa === filtroMotivo.value) &&
+      contemTexto(c.processo_contratacao, filtroProcesso.value) &&
+      contemTexto(c.numero_contrato, filtroNumeroContrato.value)
     );
   }
 
   [filtroServico, filtroTipo, filtroContaVinculada, filtroMotivo].forEach(select => select.addEventListener('change', renderizarTabela));
-  [filtroCre, filtroEmpresa].forEach(input => input.addEventListener('input', renderizarTabela));
+  [filtroCre, filtroEmpresa, filtroProcesso, filtroNumeroContrato].forEach(input => input.addEventListener('input', renderizarTabela));
 
   botaoLimparFiltros.addEventListener('click', () => {
     filtroCre.value = '';
@@ -1208,6 +1220,8 @@
     filtroTipo.value = '';
     filtroContaVinculada.value = '';
     filtroMotivo.value = '';
+    filtroProcesso.value = '';
+    filtroNumeroContrato.value = '';
     renderizarTabela();
   });
 
