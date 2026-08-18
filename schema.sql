@@ -71,10 +71,12 @@ CREATE POLICY "Inserção/Atualização/Deleção de contratos para administrado
 CREATE TABLE public.postos (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     contrato_id UUID REFERENCES public.contratos(id) ON DELETE CASCADE NOT NULL,
-    numero_posto TEXT NOT NULL,
-    status TEXT DEFAULT 'Vago', -- 'Ocupado' ou 'Vago'
-    nome_funcionario TEXT,
-    cpf_funcionario TEXT,
+    numero_posto TEXT,                -- nullable: gerado automaticamente pelo índice
+    municipio TEXT,
+    local TEXT,
+    carga_horaria TEXT,
+    status TEXT DEFAULT 'vago',       -- 'ocupado' ou 'vago'
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
