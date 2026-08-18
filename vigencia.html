@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vigência — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tema.css">
+<script src="js/tema.js"></script>
+<script>
+  if (sessionStorage.getItem('gestcon_papel') === 'master') {
+    document.documentElement.classList.add('papel-master');
+  }
+</script>
+<style>
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    font-family: 'Public Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .faixa-estado{
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, #00512E 0 33.33%, #B7212B 33.33% 66.66%, #E3A63E 66.66% 100%);
+    flex-shrink: 0;
+  }
+
+  .layout{
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  /* Menu lateral */
+  .menu-lateral{
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--verde-mais-escuro);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
+  .menu-lateral .marca{
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .menu-lateral .marca .brasao{
+    width: 40px; height: 40px; margin-bottom: 8px;
+  }
+  .menu-lateral .marca .nome-sistema{ font-size: 15px; font-weight: 700; }
+  .menu-lateral .marca .subtitulo{ font-size: 11.5px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .menu-lateral nav{
+    display: flex; flex-direction: column; gap: 2px; padding: 0 10px;
+  }
+  .item-menu{
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 7px;
+    color: rgba(255,255,255,0.75); text-decoration: none;
+    font-size: 13.5px; font-weight: 500; cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+  }
+  .item-menu:hover{ background: rgba(255,255,255,0.06); color: #fff; }
+  .item-menu.ativo{ background: var(--verde); color: #fff; }
+  .link-usuarios { display: none; }
+  html.papel-master .link-usuarios { display: flex; }
+  .item-menu svg{ width: 17px; height: 17px; flex-shrink: 0; stroke: currentColor; }
+
+  /* Barra superior */
+  .area-conteudo{ flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .barra-superior{
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 14px; padding: 12px 36px;
+    background: var(--card-bg); border-bottom: 1px solid var(--linha); flex-shrink: 0;
+  }
+  .usuario-logado-topo{ display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--texto); }
+  .usuario-logado-topo svg{ width: 16px; height: 16px; stroke: var(--texto-suave); flex-shrink: 0; }
+  .botao-sair-topo{
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid var(--linha);
+    padding: 7px 14px; border-radius: 7px;
+    font-size: 12.5px; font-weight: 700; color: var(--texto); cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .botao-sair-topo svg{ width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
+  .botao-sair-topo:hover{ background: var(--erro-bg, #FBECEB); border-color: var(--erro, #B3261E); color: var(--erro, #B3261E); }
+
+  /* Main */
+  main{ flex: 1; padding: 32px 36px; min-width: 0; overflow-y: auto; }
+  .cabecalho-pagina{
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 24px; gap: 16px; flex-wrap: wrap;
+  }
+  .cabecalho-pagina h1{ font-size: 21px; font-weight: 700; margin: 0 0 3px; color: var(--texto); }
+  .cabecalho-pagina p{ font-size: 13.5px; color: var(--texto-suave); margin: 0; }
+
+  /* Dashboard */
+  .dashboard-vigencia{
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .cartao-indicador{
+    background: var(--card-bg);
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cartao-indicador::before{
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 10px 10px 0 0;
+  }
+  .cartao-indicador.total::before   { background: var(--verde); }
+  .cartao-indicador.vencido::before { background: #B3261E; }
+  .cartao-indicador.critico::before { background: #C9420D; }
+  .cartao-indicador.atencao::before { background: #9D6C00; }
+  .cartao-indicador.seguro::before  { background: #2E7D32; }
+
+  .cartao-indicador .icone-indicador{
+    width: 42px; height: 42px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .cartao-indicador .icone-indicador svg{ width: 20px; height: 20px; }
+  .cartao-indicador.total   .icone-indicador{ background: #E8F1EC; color: var(--verde); }
+  .cartao-indicador.vencido .icone-indicador{ background: #FBECEB; color: #B3261E; }
+  .cartao-indicador.critico .icone-indicador{ background: #FEF0E7; color: #C9420D; }
+  .cartao-indicador.atencao .icone-indicador{ background: #FEF8E8; color: #9D6C00; }
+  .cartao-indicador.seguro  .icone-indicador{ background: #E8F5E9; color: #2E7D32; }
+
+  .cartao-indicador .numero-indicador{ font-size: 22px; font-weight: 700; color: var(--texto); line-height: 1.15; }
+  .cartao-indicador .rotulo-indicador{ font-size: 12px; color: var(--texto-suave); font-weight: 600; }
+
+  /* Filtros */
+  .cartao-filtros{
+    background: var(--card-bg); border: 1px solid var(--linha);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 16px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; align-items: end;
+  }
+  .campo-filtro label{
+    display: block; font-size: 11.5px; font-weight: 700;
+    color: var(--texto-suave); text-transform: uppercase;
+    letter-spacing: 0.03em; margin-bottom: 6px;
+  }
+  .campo-filtro select, .campo-filtro input{
+    width: 100%; padding: 9px 10px; border: 1px solid var(--linha);
+    border-radius: 8px; font-size: 13.5px; font-family: inherit;
+    color: var(--texto); background: var(--input-bg);
+  }
+  .campo-filtro select:focus, .campo-filtro input:focus{
+    outline: none; border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(0,81,46,0.14); background: var(--card-bg);
+  }
+  .botao-limpar-filtros{
+    grid-column: 1 / -1; justify-self: start;
+    background: none; border: none; color: var(--verde);
+    font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 2px 0;
+  }
+  .botao-limpar-filtros:hover{ text-decoration: underline; }
+
+  /* Tabela */
+  .cartao-tabela{ background: var(--card-bg); border: 1px solid var(--linha); border-radius: 10px; overflow: hidden; }
+  .tabela-scroll{ overflow-x: auto; }
+  table{ width: 100%; border-collapse: collapse; min-width: 860px; }
+  thead th{
+    text-align: left; font-size: 12px; font-weight: 700;
+    color: var(--texto-suave); text-transform: uppercase;
+    letter-spacing: 0.04em; padding: 13px 20px;
+    border-bottom: 1px solid var(--linha); background: var(--thead-bg); white-space: nowrap;
+  }
+  tbody td{
+    padding: 14px 20px; font-size: 14px;
+    border-bottom: 1px solid var(--linha); color: #1B2430;
+  }
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody tr:hover{ background: var(--hover-row); }
+  td.numero{ font-weight: 600; }
+  td.suave{ color: var(--texto-suave); }
+  .texto-truncado{ max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .estado-vazio{ padding: 48px 20px; text-align: center; color: var(--texto-suave); font-size: 14px; }
+
+  /* Badges de vigência */
+  .badge-vigencia{
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; white-space: nowrap;
+  }
+  .badge-vigencia .dot{
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .badge-vigencia.seguro  { background: #E8F5E9; color: #2E7D32; }
+  .badge-vigencia.seguro .dot  { background: #2E7D32; }
+  .badge-vigencia.atencao { background: #FEF8E8; color: #9D6C00; }
+  .badge-vigencia.atencao .dot { background: #E3A63E; }
+  .badge-vigencia.critico { background: #FEF0E7; color: #C9420D; }
+  .badge-vigencia.critico .dot { background: #C9420D; }
+  .badge-vigencia.vencido { background: #FBECEB; color: #B3261E; }
+  .badge-vigencia.vencido .dot { background: #B3261E; }
+  .badge-vigencia.sem-data{ background: #EEF0F2; color: #5B6672; }
+  .badge-vigencia.sem-data .dot{ background: #9AA3AC; }
+
+  /* Dias restantes em destaque */
+  .dias-restantes{
+    font-weight: 700; font-size: 14px;
+  }
+  .dias-restantes.seguro  { color: #2E7D32; }
+  .dias-restantes.atencao { color: #9D6C00; }
+  .dias-restantes.critico { color: #C9420D; }
+  .dias-restantes.vencido { color: #B3261E; }
+  .dias-restantes.sem-data{ color: var(--texto-suave); }
+
+  /* Barra de progresso dentro da linha */
+  .barra-dias{
+    display: flex; align-items: center; gap: 10px;
+  }
+  .barra-progresso{
+    flex: 1; height: 5px; background: var(--linha);
+    border-radius: 99px; overflow: hidden; min-width: 60px; max-width: 100px;
+  }
+  .barra-progresso-fill{
+    height: 100%; border-radius: 99px;
+    transition: width .3s ease;
+  }
+  .barra-progresso-fill.seguro  { background: #2E7D32; }
+  .barra-progresso-fill.atencao { background: #E3A63E; }
+  .barra-progresso-fill.critico { background: #C9420D; }
+  .barra-progresso-fill.vencido { background: #B3261E; }
+
+  @media (max-width: 1200px){ .dashboard-vigencia{ grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 720px){
+    .menu-lateral{ width: 64px; }
+    .menu-lateral .marca .nome-sistema, .menu-lateral .marca .subtitulo, .item-menu span{ display: none; }
+    .item-menu{ justify-content: center; }
+    main{ padding: 24px 16px; }
+    .dashboard-vigencia{ grid-template-columns: 1fr 1fr; }
+    .cartao-filtros{ grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="faixa-estado"></div>
+
+  <div class="layout">
+  <aside class="menu-lateral">
+    <div class="marca">
+      <svg class="brasao" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Brasão">
+        <circle cx="50" cy="50" r="47" fill="#FFFFFF" stroke="#00512E" stroke-width="3"/>
+        <path d="M50 3 A47 47 0 0 1 50 97 Z" fill="#B7212B" opacity="0.9"/>
+        <path d="M50 3 A47 47 0 0 0 50 97 Z" fill="#00512E" opacity="0.9"/>
+        <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
+        <text x="50" y="58" text-anchor="middle" font-family="Public Sans, sans-serif" font-weight="800" font-size="26" fill="#00512E">RS</text>
+        <circle cx="50" cy="50" r="47" fill="none" stroke="#E3A63E" stroke-width="2"/>
+      </svg>
+      <div class="nome-sistema">GestCon</div>
+      <div class="subtitulo">Sistema de Gestão</div>
+    </div>
+    <nav>
+      <a class="item-menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>
+        <span>Início</span>
+      </a>
+      <a class="item-menu" href="cadastro-empresa.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg>
+        <span>Empresas</span>
+      </a>
+      <a class="item-menu" href="contratos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h6"/><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+        <span>Contratos</span>
+      </a>
+      <a class="item-menu" href="postos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
+        <span>Postos</span>
+      </a>
+      <a class="item-menu ativo" href="vigencia.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+        <span>Vigência</span>
+      </a>
+      <a class="item-menu link-usuarios" href="usuarios.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Usuários</span>
+      </a>
+      <a class="item-menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.04z"/></svg>
+        <span>Configurações</span>
+      </a>
+    </nav>
+  </aside>
+
+  <div class="area-conteudo">
+  <header class="barra-superior">
+    <div class="usuario-logado-topo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="nome-usuario-topo">—</span>
+    </div>
+    <button type="button" class="botao-tema" onclick="toggleTema()" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+      <svg class="icone-lua" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icone-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <button type="button" class="botao-sair-topo" onclick="deslogar()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Sair
+    </button>
+  </header>
+
+  <main>
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Vigência</h1>
+        <p>Monitoramento dos prazos de vencimento dos contratos ativos.</p>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard-vigencia">
+      <div class="cartao-indicador total">
+        <div class="icone-indicador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+          <div class="numero-indicador" id="ind-total">0</div>
+          <div class="rotulo-indicador">Contratos c/ Vigência</div>
+        </div>
+      </div>
+      <div class="cartao-indicador vencido">
+        <div class="icone-indicador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <div class="numero-indicador" id="ind-vencido">0</div>
+          <div class="rotulo-indicador">Vencidos</div>
+        </div>
+      </div>
+      <div class="cartao-indicador critico">
+        <div class="icone-indicador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <div class="numero-indicador" id="ind-critico">0</div>
+          <div class="rotulo-indicador">Críticos (≤ 30 dias)</div>
+        </div>
+      </div>
+      <div class="cartao-indicador atencao">
+        <div class="icone-indicador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="numero-indicador" id="ind-atencao">0</div>
+          <div class="rotulo-indicador">Atenção (31–90 dias)</div>
+        </div>
+      </div>
+      <div class="cartao-indicador seguro">
+        <div class="icone-indicador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <div>
+          <div class="numero-indicador" id="ind-seguro">0</div>
+          <div class="rotulo-indicador">Seguros (> 90 dias)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="cartao-filtros">
+      <div class="campo-filtro">
+        <label for="filtro-vig-cre">CRE</label>
+        <input type="text" id="filtro-vig-cre" placeholder="Digite para filtrar" autocomplete="off">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-vig-empresa">Empresa</label>
+        <input type="text" id="filtro-vig-empresa" placeholder="Digite para filtrar" autocomplete="off">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-vig-servico">Serviço</label>
+        <select id="filtro-vig-servico">
+          <option value="">Todos</option>
+          <option value="Limpeza">Limpeza</option>
+          <option value="Vigilância">Vigilância</option>
+          <option value="Merendeiras">Merendeiras</option>
+          <option value="Porteiros">Porteiros</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-vig-situacao">Status de Vigência</label>
+        <select id="filtro-vig-situacao">
+          <option value="">Todos</option>
+          <option value="vencido">Vencido</option>
+          <option value="critico">Crítico (≤ 30 dias)</option>
+          <option value="atencao">Atenção (31–90 dias)</option>
+          <option value="seguro">Seguro (> 90 dias)</option>
+          <option value="sem-data">Sem data de vigência</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtro-vig-tipo">Tipo</label>
+        <select id="filtro-vig-tipo">
+          <option value="">Todos</option>
+          <option value="dispensa">Dispensa de Licitação</option>
+          <option value="licitacao">Licitação</option>
+        </select>
+      </div>
+      <button type="button" class="botao-limpar-filtros" id="botao-limpar-vig">Limpar filtros</button>
+    </div>
+
+    <!-- Tabela -->
+    <div class="cartao-tabela">
+      <div class="tabela-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Nº Contrato</th>
+              <th>Empresa</th>
+              <th>Serviço</th>
+              <th>CRE</th>
+              <th>Vigência Início</th>
+              <th>Vigência Fim</th>
+              <th>Dias Restantes</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="corpo-tabela-vigencia"></tbody>
+        </table>
+      </div>
+      <div class="estado-vazio" id="estado-vazio-vigencia" style="display:none">Nenhum contrato encontrado.</div>
+    </div>
+  </main>
+  </div>
+  </div>
+
+<script type="module">
+  import { supabase, obterPerfilLogado, fazerLogout } from './js/supabase.js';
+
+  window.deslogar = fazerLogout;
+
+  let contratos = [];
+
+  const corpoTabela    = document.getElementById('corpo-tabela-vigencia');
+  const estadoVazio    = document.getElementById('estado-vazio-vigencia');
+  const filtroCre      = document.getElementById('filtro-vig-cre');
+  const filtroEmpresa  = document.getElementById('filtro-vig-empresa');
+  const filtroServico  = document.getElementById('filtro-vig-servico');
+  const filtroSituacao = document.getElementById('filtro-vig-situacao');
+  const filtroTipo     = document.getElementById('filtro-vig-tipo');
+
+  // ==========================================
+  // INICIALIZAÇÃO
+  // ==========================================
+  async function inicializar() {
+    const papelCache = sessionStorage.getItem('gestcon_papel');
+    if (papelCache === 'master') {
+      const linkUsuariosCache = document.querySelector('a.item-menu[href="usuarios.html"]');
+      if (linkUsuariosCache) linkUsuariosCache.style.display = '';
+    }
+
+    const usuario = await obterPerfilLogado();
+    if (!usuario || !usuario.aprovado) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const rotuloNomeTopo = document.getElementById('nome-usuario-topo');
+    if (rotuloNomeTopo) rotuloNomeTopo.textContent = usuario.nome_completo || usuario.email;
+
+    const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+    if (usuario.papel === 'master') {
+      if (linkUsuarios) linkUsuarios.style.display = '';
+    } else {
+      if (linkUsuarios) linkUsuarios.remove();
+    }
+
+    await carregarContratos();
+  }
+
+  // ==========================================
+  // CARREGAMENTO
+  // ==========================================
+  async function carregarContratos() {
+    const { data, error } = await supabase
+      .from('contratos')
+      .select('*, empresas(nome)')
+      .order('vigencia_fim', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao carregar contratos:', error);
+      return;
+    }
+
+    contratos = (data || []).map(c => ({
+      ...c,
+      empresa_nome: c.empresas?.nome || 'Desconhecida',
+      dias_restantes: calcularDias(c.vigencia_fim),
+      status_vigencia: calcularStatus(c.vigencia_fim)
+    }));
+
+    renderizar();
+  }
+
+  // ==========================================
+  // CÁLCULO DE DIAS
+  // ==========================================
+  function calcularDias(vigenciaFim) {
+    if (!vigenciaFim) return null;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const fim = new Date(vigenciaFim + 'T00:00:00');
+    return Math.floor((fim - hoje) / (1000 * 60 * 60 * 24));
+  }
+
+  function calcularStatus(vigenciaFim) {
+    const dias = calcularDias(vigenciaFim);
+    if (dias === null) return 'sem-data';
+    if (dias < 0)   return 'vencido';
+    if (dias <= 30)  return 'critico';
+    if (dias <= 90)  return 'atencao';
+    return 'seguro';
+  }
+
+  function rotuloStatus(status) {
+    return { 'vencido': 'Vencido', 'critico': 'Crítico', 'atencao': 'Atenção', 'seguro': 'Seguro', 'sem-data': 'Sem data' }[status] || '—';
+  }
+
+  function formatarData(data) {
+    if (!data) return '—';
+    const [ano, mes, dia] = data.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  // ==========================================
+  // DASHBOARD
+  // ==========================================
+  function atualizarDashboard(lista) {
+    const comData    = lista.filter(c => c.status_vigencia !== 'sem-data');
+    const vencidos   = lista.filter(c => c.status_vigencia === 'vencido');
+    const criticos   = lista.filter(c => c.status_vigencia === 'critico');
+    const atencao    = lista.filter(c => c.status_vigencia === 'atencao');
+    const seguros    = lista.filter(c => c.status_vigencia === 'seguro');
+
+    document.getElementById('ind-total').textContent   = comData.length;
+    document.getElementById('ind-vencido').textContent = vencidos.length;
+    document.getElementById('ind-critico').textContent = criticos.length;
+    document.getElementById('ind-atencao').textContent = atencao.length;
+    document.getElementById('ind-seguro').textContent  = seguros.length;
+  }
+
+  // ==========================================
+  // FILTROS
+  // ==========================================
+  function contemTexto(valor, filtro) {
+    if (!filtro) return true;
+    return (valor || '').toLowerCase().includes(filtro.toLowerCase().trim());
+  }
+
+  function contratosFiltrados() {
+    return contratos.filter(c =>
+      contemTexto(c.cre, filtroCre.value) &&
+      contemTexto(c.empresa_nome, filtroEmpresa.value) &&
+      (!filtroServico.value  || c.servico === filtroServico.value) &&
+      (!filtroSituacao.value || c.status_vigencia === filtroSituacao.value) &&
+      (!filtroTipo.value     || c.tipo_contrato === filtroTipo.value)
+    );
+  }
+
+  [filtroServico, filtroSituacao, filtroTipo].forEach(s => s.addEventListener('change', renderizar));
+  [filtroCre, filtroEmpresa].forEach(i => i.addEventListener('input', renderizar));
+
+  document.getElementById('botao-limpar-vig').addEventListener('click', () => {
+    filtroCre.value = '';
+    filtroEmpresa.value = '';
+    filtroServico.value = '';
+    filtroSituacao.value = '';
+    filtroTipo.value = '';
+    renderizar();
+  });
+
+  // ==========================================
+  // RENDERIZAÇÃO
+  // ==========================================
+  function renderizar() {
+    atualizarDashboard(contratos);
+    corpoTabela.innerHTML = '';
+    const lista = contratosFiltrados();
+
+    estadoVazio.style.display = lista.length ? 'none' : 'block';
+    estadoVazio.textContent = contratos.length
+      ? 'Nenhum contrato encontrado para os filtros selecionados.'
+      : 'Nenhum contrato cadastrado ainda.';
+
+    lista.forEach(c => {
+      const tr = document.createElement('tr');
+      const dias = c.dias_restantes;
+      const status = c.status_vigencia;
+
+      // Barra de progresso: calcula % com base em 365 dias de total
+      let barraPercent = 0;
+      let barraCor = status;
+      if (dias !== null && dias > 0) {
+        barraPercent = Math.min(100, Math.round((dias / 365) * 100));
+      }
+
+      const labelDias = dias === null
+        ? '<span class="dias-restantes sem-data">—</span>'
+        : dias < 0
+          ? `<span class="dias-restantes vencido">Vencido há ${Math.abs(dias)} dia${Math.abs(dias) !== 1 ? 's' : ''}</span>`
+          : `<div class="barra-dias">
+               <span class="dias-restantes ${status}">${dias} dia${dias !== 1 ? 's' : ''}</span>
+               <div class="barra-progresso">
+                 <div class="barra-progresso-fill ${barraCor}" style="width:${barraPercent}%"></div>
+               </div>
+             </div>`;
+
+      const badgeHtml = `<span class="badge-vigencia ${status}"><span class="dot"></span>${rotuloStatus(status)}</span>`;
+      const seloTipo = c.tipo_contrato === 'dispensa'
+        ? '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#FBECEB;color:#B3261E;">Dispensa</span>'
+        : '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#E8F1EC;color:#00512E;">Licitação</span>';
+
+      tr.innerHTML = `
+        <td class="numero">${c.numero_contrato || '—'}</td>
+        <td class="texto-truncado" title="${c.empresa_nome}">${c.empresa_nome}</td>
+        <td>${c.servico || '—'}</td>
+        <td class="suave">${c.cre || '—'}</td>
+        <td class="suave">${formatarData(c.vigencia_inicio)}</td>
+        <td class="suave">${formatarData(c.vigencia_fim)}</td>
+        <td>${labelDias}</td>
+        <td>${badgeHtml}</td>`;
+
+      corpoTabela.appendChild(tr);
+    });
+  }
+
+  inicializar();
+</script>
+
+</body>
+</html>
