@@ -197,6 +197,10 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 6 6M15 15l-6 6"/></svg>
         Exportar Excel
       </button>
+      <button class="botao-secundario" onclick="exportarPDF()" title="Exportar para PDF">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h1a1.5 1.5 0 0 0 0-3H9v5"/><path d="M13 12v5h1a2 2 0 0 0 0-5z" fill="none"/></svg>
+        Exportar PDF
+      </button>
       <button class="botao-primario" id="botao-cadastrar" onclick="abrirModal()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         Cadastrar Estabelecimento
@@ -484,7 +488,14 @@
         <td>${e.municipio || '—'}</td>
         <td>${e.tipo || '—'}</td>
         <td>${seloTI}</td>
-        <td><div class="acoes-linha">${acoesEdicao}</div></td>`;
+        <td>
+          <div class="acoes-linha">
+            <button class="botao-icone" onclick="visualizarEstabelecimento('${e.id}')" title="Visualizar">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            ${acoesEdicao}
+          </div>
+        </td>`;
       corpoTabela.appendChild(tr);
     });
   }
@@ -498,6 +509,8 @@
     document.getElementById('titulo-modal').textContent = 'Cadastrar Estabelecimento';
     form.reset();
     limparErros();
+    habilitarCampos(true);
+    botaoSalvar.style.display = 'block';
     sobreposicao.classList.add('aberta');
     campoNome.focus();
   };
@@ -509,11 +522,23 @@
     limparErros();
   };
 
-  window.editarEstabelecimento = function(id) {
+  function habilitarCampos(habilitar) {
+    [campoNome, campoCre, campoIdt, campoEndereco, campoMunicipio, campoTipo, campoTempoIntegral]
+      .forEach(campo => campo.disabled = !habilitar);
+  }
+
+  window.visualizarEstabelecimento = function(id) {
     const e = estabelecimentos.find(x => x.id === id);
     if (!e) return;
-    idEmEdicao = id;
-    document.getElementById('titulo-modal').textContent = 'Editar Estabelecimento';
+    document.getElementById('titulo-modal').textContent = 'Visualizar Estabelecimento';
+    preencherCampos(e);
+    limparErros();
+    habilitarCampos(false);
+    botaoSalvar.style.display = 'none';
+    sobreposicao.classList.add('aberta');
+  };
+
+  function preencherCampos(e) {
     campoNome.value          = e.estabelecimento || '';
     campoCre.value           = e.cre || '';
     campoIdt.value           = e.idt || '';
@@ -521,7 +546,17 @@
     campoMunicipio.value     = e.municipio || '';
     campoTipo.value          = e.tipo || '';
     campoTempoIntegral.value = String(e.tempo_integral ?? false);
+  }
+
+  window.editarEstabelecimento = function(id) {
+    const e = estabelecimentos.find(x => x.id === id);
+    if (!e) return;
+    idEmEdicao = id;
+    document.getElementById('titulo-modal').textContent = 'Editar Estabelecimento';
+    preencherCampos(e);
     limparErros();
+    habilitarCampos(true);
+    botaoSalvar.style.display = 'block';
     sobreposicao.classList.add('aberta');
   };
 
@@ -622,6 +657,46 @@
     const livro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(livro, planilha, 'Estabelecimentos');
     XLSX.writeFile(livro, `estabelecimentos_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  // ==========================================
+  // EXPORTAÇÃO PDF
+  // ==========================================
+  window.exportarPDF = function() {
+    const lista = estabelecimentosFiltrados();
+    if (!lista.length) { alert('Não há dados para exportar.'); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+
+    doc.setFontSize(16);
+    doc.text('Relatório de Estabelecimentos', 14, 20);
+
+    const dataHora = new Date().toLocaleString('pt-BR');
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${dataHora}`, 14, 28);
+
+    const dados = lista.map(e => [
+      e.estabelecimento || '',
+      e.cre || '',
+      e.idt || '',
+      e.municipio || '',
+      e.tipo || '',
+      e.tempo_integral ? 'Sim' : 'Não'
+    ]);
+
+    doc.autoTable({
+      startY: 35,
+      head: [['Estabelecimento', 'CRE', 'IDT', 'Município', 'Tipo', 'Tempo Integral']],
+      body: dados,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [0, 81, 46], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [245, 245, 245] }
+    });
+
+    doc.save(`estabelecimentos_${new Date().toISOString().slice(0,10)}.pdf`);
   };
 
   inicializar();
