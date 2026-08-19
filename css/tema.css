@@ -123,13 +123,17 @@
   transition-duration: .2s;
   transition-timing-function: ease;
 }
+button, a, input, select, textarea {
+  transition: background-color .15s ease, border-color .15s ease,
+              color .15s ease, box-shadow .15s ease,
+              transform .05s ease, opacity .15s ease;
 }
-
 /* ── Notificações (Sino e Dropdown) ─────────────────────── */
 .container-notificacoes {
   position: relative;
   display: flex;
   align-items: center;
+  z-index: 9999;
 }
 
 .botao-sino {
@@ -182,7 +186,7 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   display: none;
   flex-direction: column;
-  z-index: 100;
+  z-index: 9999;
   overflow: hidden;
 }
 .dropdown-notificacoes.aberto {
