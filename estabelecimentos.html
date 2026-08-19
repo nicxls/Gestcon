@@ -116,7 +116,7 @@
   @media (max-width:560px){ .grade-formulario{ grid-template-columns:1fr; } }
 </style>
 </head>
-<body>
+<body style="visibility:hidden;">
 
 <div class="faixa-estado"></div>
 <div class="layout">
@@ -385,9 +385,10 @@
 
     usuarioLogado = await obterPerfilLogado();
     if (!usuarioLogado || !usuarioLogado.aprovado) {
-      window.location.href = 'login.html';
+      window.location.replace('login.html');
       return;
     }
+    document.body.style.visibility = 'visible';
 
     usuarioEhAdministrador = usuarioLogado.papel === 'administrador' || usuarioLogado.papel === 'master';
 

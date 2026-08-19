@@ -255,7 +255,7 @@
   }
 </style>
 </head>
-<body>
+<body style="visibility:hidden;">
 
   <div class="faixa-estado"></div>
 
@@ -486,9 +486,10 @@
 
     const usuario = await obterPerfilLogado();
     if (!usuario || !usuario.aprovado) {
-      window.location.href = 'login.html';
+      window.location.replace('login.html');
       return;
     }
+    document.body.style.visibility = 'visible';
 
     const rotuloNomeTopo = document.getElementById('nome-usuario-topo');
     if (rotuloNomeTopo) rotuloNomeTopo.textContent = usuario.nome_completo || usuario.email;

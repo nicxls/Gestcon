@@ -373,7 +373,7 @@
   }
 </style>
 </head>
-<body>
+<body style="visibility:hidden;">
 
   <div class="faixa-estado"></div>
 
@@ -551,9 +551,10 @@
 
     usuarioLogado = await obterPerfilLogado();
     if (!usuarioLogado || !usuarioLogado.aprovado) {
-      window.location.href = 'login.html';
+      window.location.replace('login.html');
       return;
     }
+    document.body.style.visibility = 'visible';
 
     usuarioEhAdministrador = usuarioLogado.papel === 'administrador' || usuarioLogado.papel === 'master';
     usuarioEhMaster = usuarioLogado.papel === 'master';

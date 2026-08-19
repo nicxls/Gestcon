@@ -371,7 +371,7 @@
   }
 </style>
 </head>
-<body>
+<body style="visibility:hidden;">
 
   <div class="faixa-estado"></div>
 
@@ -531,9 +531,10 @@
     usuarioLogado = await obterPerfilLogado();
 
     if (!usuarioLogado) {
-      window.location.href = 'login.html';
+      window.location.replace('login.html');
       return;
     }
+    document.body.style.visibility = 'visible';
 
     const rotuloNomeTopo = document.getElementById('nome-usuario-topo');
     if (rotuloNomeTopo) rotuloNomeTopo.textContent = usuarioLogado.nome_completo || usuarioLogado.email;
