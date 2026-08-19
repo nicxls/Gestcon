@@ -51,7 +51,7 @@ export async function carregarNotificacoes() {
     const { data: contratos, error } = await supabase
       .from('contratos')
       .select('id, numero_contrato, processo_contratacao, vigencia_fim')
-      .eq('ativo', true);
+      .eq('situacao', 'ativo');
 
     if (error) throw error;
 
