@@ -1,11 +1,221 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=login.html">
-  <title>GestCon — Redirecionando...</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Início — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tema.css">
+<script src="js/tema.js"></script>
+<script>
+  if (sessionStorage.getItem('gestcon_papel') === 'master') {
+    document.documentElement.classList.add('papel-master');
+  }
+</script>
+<style>
+  *{ box-sizing: border-box; }
+  body{ margin:0; font-family:'Public Sans',system-ui,sans-serif; background:var(--bg); color:var(--texto); display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+  .faixa-estado{ height:6px; width:100%; background:linear-gradient(90deg,#00512E 0 33.33%,#B7212B 33.33% 66.66%,#E3A63E 66.66% 100%); flex-shrink:0; }
+  .layout{ flex:1; display:flex; min-height:0; }
+
+  /* Menu */
+  .menu-lateral{ width:240px; flex-shrink:0; background:var(--verde-mais-escuro); color:#fff; display:flex; flex-direction:column; padding:20px 0; }
+  .menu-lateral .marca{ padding:0 20px 20px; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:12px; text-align:center; }
+  .menu-lateral .marca .brasao{ width:40px; height:40px; margin-bottom:8px; }
+  .menu-lateral .marca .nome-sistema{ font-size:15px; font-weight:700; }
+  .menu-lateral .marca .subtitulo{ font-size:11.5px; color:rgba(255,255,255,0.6); margin-top:2px; }
+  .menu-lateral nav{ display:flex; flex-direction:column; gap:2px; padding:0 10px; }
+  .item-menu{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:7px; color:rgba(255,255,255,0.75); text-decoration:none; font-size:13.5px; font-weight:500; cursor:pointer; transition:background .12s ease,color .12s ease; }
+  .item-menu:hover{ background:rgba(255,255,255,0.06); color:#fff; }
+  .item-menu.ativo{ background:var(--verde); color:#fff; }
+  .link-usuarios{ display:none; }
+  html.papel-master .link-usuarios{ display:flex; }
+  .item-menu svg{ width:17px; height:17px; flex-shrink:0; stroke:currentColor; }
+
+  /* Barra superior */
+  .area-conteudo{ flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .barra-superior{ display:flex; align-items:center; justify-content:flex-end; gap:14px; padding:12px 36px; background:var(--card-bg); border-bottom:1px solid var(--linha); flex-shrink:0; }
+  .usuario-logado-topo{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--texto); }
+  .usuario-logado-topo svg{ width:16px; height:16px; stroke:var(--texto-suave); flex-shrink:0; }
+  .botao-sair-topo{ display:flex; align-items:center; gap:6px; background:none; border:1px solid var(--linha); padding:7px 14px; border-radius:7px; font-size:12.5px; font-weight:700; color:var(--texto); cursor:pointer; transition:background .15s ease,border-color .15s ease,color .15s ease; }
+  .botao-sair-topo svg{ width:14px; height:14px; stroke:currentColor; flex-shrink:0; }
+  .botao-sair-topo:hover{ background:var(--erro-bg,#FBECEB); border-color:var(--erro,#B3261E); color:var(--erro,#B3261E); }
+
+  /* Main */
+  main{ flex:1; padding:32px 36px; min-width:0; overflow-y:auto; }
+  .cabecalho-pagina{ margin-bottom:24px; border-bottom: 2px solid var(--verde); padding-bottom: 12px; }
+  .cabecalho-pagina h1{ font-size:21px; font-weight:700; margin:0; color:var(--texto); }
+
+  /* Quadro de Avisos */
+  .quadro-avisos {
+    background: var(--card-bg);
+    border: 1px solid var(--linha);
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .aviso-item {
+    border: 1px solid var(--linha);
+    border-left: 4px solid var(--verde);
+    padding: 20px 24px;
+    border-radius: 4px;
+    background: var(--card-bg);
+  }
+
+  .aviso-item h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    text-transform: uppercase;
+  }
+
+  .aviso-item p {
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin: 0 0 16px 0;
+    color: var(--texto);
+  }
+  
+  .aviso-item p:last-child {
+    margin-bottom: 0;
+  }
+  
+  .aviso-item strong {
+    font-weight: 700;
+  }
+
+  @media (max-width:720px){ .menu-lateral{ width:64px; } .menu-lateral .marca .nome-sistema,.menu-lateral .marca .subtitulo,.item-menu span{ display:none; } .item-menu{ justify-content:center; } main{ padding:24px 16px; } }
+</style>
 </head>
 <body>
-  <script>window.location.replace('login.html');</script>
+
+<div class="faixa-estado"></div>
+<div class="layout">
+
+<aside class="menu-lateral">
+  <div class="marca">
+    <svg class="brasao" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Brasão">
+      <circle cx="50" cy="50" r="47" fill="#FFFFFF" stroke="#00512E" stroke-width="3"/>
+      <path d="M50 3 A47 47 0 0 1 50 97 Z" fill="#B7212B" opacity="0.9"/>
+      <path d="M50 3 A47 47 0 0 0 50 97 Z" fill="#00512E" opacity="0.9"/>
+      <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
+      <text x="50" y="58" text-anchor="middle" font-family="Public Sans,sans-serif" font-weight="800" font-size="26" fill="#00512E">RS</text>
+      <circle cx="50" cy="50" r="47" fill="none" stroke="#E3A63E" stroke-width="2"/>
+    </svg>
+    <div class="nome-sistema">GestCon</div>
+    <div class="subtitulo">Sistema de Gestão</div>
+  </div>
+  <nav>
+    <a class="item-menu ativo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>
+      <span>Início</span>
+    </a>
+    <a class="item-menu" href="cadastro-empresa.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      <span>Empresas</span>
+    </a>
+    <a class="item-menu" href="contratos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h6"/><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+      <span>Contratos</span>
+    </a>
+    <a class="item-menu" href="estabelecimentos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      <span>Estabelecimentos</span>
+    </a>
+    <a class="item-menu" href="postos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>
+      <span>Postos</span>
+    </a>
+    <a class="item-menu" href="vigencia.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+      <span>Vigência</span>
+    </a>
+    <a class="item-menu link-usuarios" href="usuarios.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Usuários</span>
+    </a>
+    <a class="item-menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.04z"/></svg>
+      <span>Configurações</span>
+    </a>
+  </nav>
+</aside>
+
+<div class="area-conteudo">
+<header class="barra-superior">
+  <div class="usuario-logado-topo">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span id="nome-usuario-topo">—</span>
+  </div>
+  <button type="button" class="botao-tema" onclick="toggleTema()" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+    <svg class="icone-lua" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <svg class="icone-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+  <button type="button" class="botao-sair-topo" onclick="deslogar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    Sair
+  </button>
+</header>
+
+<main>
+  <div class="cabecalho-pagina">
+    <h1>Quadro de Avisos</h1>
+  </div>
+
+  <div class="quadro-avisos">
+    
+    <div class="aviso-item">
+      <h2>COMUNICADO AOS USUÁRIOS DO SISTEMA GESTCON</h2>
+      <p>Senhores usuários do Sistema Gestcon,</p>
+      <p>Informamos que foi implementado o novo <strong>módulo de Estabelecimentos e Controle de Prazos Contratuais</strong>, destinado ao acompanhamento dos contratos com dedicação exclusiva de mão de obra.</p>
+      <p>O novo módulo permite <strong>monitorar os prazos dos instrumentos contratuais</strong>, bem como <strong>receber alertas sobre contratos que estejam próximos do vencimento</strong>, facilitando o acompanhamento e a gestão dos contratos.</p>
+      <p>Por se tratar de uma nova implementação, solicitamos que eventuais erros, inconsistências ou dificuldades identificadas durante a utilização do módulo sejam comunicados à equipe responsável, para que possam ser analisados e corrigidos.</p>
+      <p>Agradecemos a colaboração de todos.</p>
+      <p>Atenciosamente,</p>
+      <p><strong>Divisão de Serviços Escolares</strong></p>
+    </div>
+
+  </div>
+</main>
+</div>
+</div>
+
+<script type="module">
+  import { obterPerfilLogado, fazerLogout } from './js/supabase.js';
+
+  window.deslogar = fazerLogout;
+
+  async function inicializar() {
+    const papelCache = sessionStorage.getItem('gestcon_papel');
+    if (papelCache === 'master') {
+      const linkUsuariosCache = document.querySelector('a.item-menu[href="usuarios.html"]');
+      if (linkUsuariosCache) linkUsuariosCache.style.display = '';
+    }
+
+    const usuarioLogado = await obterPerfilLogado();
+    if (!usuarioLogado || !usuarioLogado.aprovado) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const rotuloNomeTopo = document.getElementById('nome-usuario-topo');
+    if (rotuloNomeTopo) rotuloNomeTopo.textContent = usuarioLogado.nome_completo || usuarioLogado.email;
+
+    const linkUsuarios = document.querySelector('a.item-menu[href="usuarios.html"]');
+    if (usuarioLogado.papel === 'master') {
+      if (linkUsuarios) linkUsuarios.style.display = '';
+    } else {
+      if (linkUsuarios) linkUsuarios.remove();
+    }
+  }
+
+  inicializar();
+</script>
+
 </body>
 </html>
