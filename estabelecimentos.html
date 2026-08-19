@@ -681,6 +681,7 @@
       e.estabelecimento || '',
       e.cre || '',
       e.idt || '',
+      e.endereco || '',
       e.municipio || '',
       e.tipo || '',
       e.tempo_integral ? 'Sim' : 'Não'
@@ -688,7 +689,7 @@
 
     doc.autoTable({
       startY: 35,
-      head: [['Estabelecimento', 'CRE', 'IDT', 'Município', 'Tipo', 'Tempo Integral']],
+      head: [['Estabelecimento', 'CRE', 'IDT', 'Endereço', 'Município', 'Tipo', 'Tempo Integral']],
       body: dados,
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 3 },
