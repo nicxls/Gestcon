@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    GestCon — Sistema de variáveis de tema (claro / escuro)
    Inclua este arquivo em todas as páginas do sistema.
    ============================================================ */
@@ -123,8 +123,133 @@
   transition-duration: .2s;
   transition-timing-function: ease;
 }
-button, a, input, select, textarea {
-  transition: background-color .15s ease, border-color .15s ease,
-              color .15s ease, box-shadow .15s ease,
-              transform .05s ease, opacity .15s ease;
+}
+
+/* ── Notificações (Sino e Dropdown) ─────────────────────── */
+.container-notificacoes {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.botao-sino {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: none;
+  border: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+  position: relative;
+  transition: color .15s ease, background .15s ease;
+  border-radius: 7px;
+}
+.botao-sino:hover {
+  background: var(--toggle-hover-bg);
+  color: var(--texto);
+}
+.botao-sino svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+}
+.botao-sino .badge-notificacao {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--erro, #B3261E);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 1px 4px;
+  min-width: 14px;
+  text-align: center;
+  border: 2px solid var(--card-bg);
+}
+
+.dropdown-notificacoes {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-height: 400px;
+  background: var(--card-bg);
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  display: none;
+  flex-direction: column;
+  z-index: 100;
+  overflow: hidden;
+}
+.dropdown-notificacoes.aberto {
+  display: flex;
+}
+
+.dropdown-notificacoes-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--linha);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--thead-bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dropdown-notificacoes-body {
+  overflow-y: auto;
+  max-height: 350px;
+  padding: 8px 0;
+}
+
+.item-notificacao {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--linha);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.item-notificacao:last-child {
+  border-bottom: none;
+}
+.item-notificacao:hover {
+  background: var(--hover-row);
+}
+.item-notificacao strong {
+  color: var(--texto);
+  font-size: 13.5px;
+}
+.item-notificacao span {
+  color: var(--texto-suave);
+}
+
+.selo-alerta {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  margin-top: 4px;
+  width: fit-content;
+}
+.selo-alerta.vencido, .selo-alerta.critico {
+  background: var(--erro-bg);
+  color: var(--erro);
+}
+.selo-alerta.atencao {
+  background: var(--pendente-bg);
+  color: var(--pendente);
+}
+
+.estado-vazio-notificacao {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: 13px;
 }
