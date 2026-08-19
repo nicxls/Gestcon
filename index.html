@@ -92,7 +92,7 @@
   @media (max-width:720px){ .menu-lateral{ width:64px; } .menu-lateral .marca .nome-sistema,.menu-lateral .marca .subtitulo,.item-menu span{ display:none; } .item-menu{ justify-content:center; } main{ padding:24px 16px; } }
 </style>
 </head>
-<body>
+<body style="visibility: hidden;">
 
 <div class="faixa-estado"></div>
 <div class="layout">
@@ -199,9 +199,11 @@
 
     const usuarioLogado = await obterPerfilLogado();
     if (!usuarioLogado || !usuarioLogado.aprovado) {
-      window.location.href = 'login.html';
+      window.location.replace('login.html');
       return;
     }
+
+    document.body.style.visibility = 'visible';
 
     const rotuloNomeTopo = document.getElementById('nome-usuario-topo');
     if (rotuloNomeTopo) rotuloNomeTopo.textContent = usuarioLogado.nome_completo || usuarioLogado.email;
