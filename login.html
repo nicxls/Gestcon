@@ -685,6 +685,7 @@
 
     // Salva o papel no sessionStorage para exibir o menu corretamente desde a primeira página
     sessionStorage.setItem('gestcon_papel', perfil.papel);
+    sessionStorage.setItem('gestcon_nome', perfil.nome_completo || perfil.email);
 
     // Tudo certo, redireciona
     window.location.href = 'index.html';
